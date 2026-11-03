@@ -1,56 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import type { OrderSummaryDto } from '@nirantar/shared';
-import { LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router';
-import { Button } from '../../design-system/Button';
 import { AllDoneIllustration } from '../../design-system/Illustrations';
 import { ErrorState, Skeleton } from '../../design-system/States';
 import { api } from '../../lib/api';
 import { errorMessage } from '../../lib/errors';
-import { useMe, useSignOut } from '../../lib/session';
+import { StaffLayout } from '../../layouts/StaffLayout';
 import i18n from '../../i18n';
 
 /**
  * Day 2 staff landing. Pharmacists see the live verification queue
  * (read-only for now; the side-by-side workspace arrives on Day 5).
- * Operations sees the store list (stock import arrives on Day 3).
  */
 export function StaffHomePage() {
-  const { data: me } = useMe();
-  const signOut = useSignOut();
-  const navigate = useNavigate();
-  if (!me) return null;
-
   return (
-    <div lang="en" className="min-h-dvh bg-canvas">
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-4 px-6">
-          <span className="text-staff-section font-semibold text-pine">Nirantar</span>
-          <span className="text-staff-table text-ink-3">
-            {me.role === 'PHARMACIST' ? 'Pharmacist' : 'Central operations'}
-          </span>
-          <div className="ml-auto flex items-center gap-4">
-            <span className="text-staff-table text-ink-2">
-              {me.name}
-              {me.pharmacistRegNo && <span className="text-ink-3"> · {me.pharmacistRegNo}</span>}
-              {me.store && <span className="text-ink-3"> · {me.store.name}</span>}
-            </span>
-            <Button
-              variant="quiet"
-              size="sm"
-              icon={<LogOut className="size-4" aria-hidden />}
-              loading={signOut.isPending}
-              onClick={() => signOut.mutate(undefined, { onSuccess: () => navigate('/signin', { replace: true }) })}
-            >
-              Sign out
-            </Button>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-[1440px] px-6 py-8">
-        {me.role === 'PHARMACIST' ? <QueuePreview /> : <StoresPreview />}
-      </main>
-    </div>
+    <StaffLayout>
+      <QueuePreview />
+    </StaffLayout>
   );
 }
 
@@ -108,37 +73,6 @@ function QueuePreview() {
           </table>
         )}
       </div>
-    </section>
-  );
-}
-
-function StoresPreview() {
-  const stores = useQuery({
-    queryKey: ['ops', 'stores'],
-    queryFn: () => api.get<{ id: string; code: string; name: string; isActive: boolean }[]>('/ops/stores'),
-  });
-  return (
-    <section>
-      <h1 className="text-staff-title font-semibold text-ink">Stores</h1>
-      <p className="mt-1 text-staff-body text-ink-2">
-        6 synthetic stores for the prototype (the real chain has 46).
-      </p>
-      {stores.isLoading && <Skeleton className="mt-6 h-40 w-full" />}
-      {stores.isError && (
-        <div className="mt-6">
-          <ErrorState message={errorMessage(stores.error, i18n.t)} onRetry={() => void stores.refetch()} />
-        </div>
-      )}
-      {stores.data && (
-        <ul className="mt-6 divide-y divide-line border-y border-line bg-surface">
-          {stores.data.map((store) => (
-            <li key={store.id} className="flex h-11 items-center gap-4 px-4 text-staff-table">
-              <span className="w-12 font-mono text-ink-2">{store.code}</span>
-              <span className="text-ink">{store.name}</span>
-            </li>
-          ))}
-        </ul>
-      )}
     </section>
   );
 }

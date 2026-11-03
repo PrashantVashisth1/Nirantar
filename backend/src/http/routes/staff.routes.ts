@@ -18,18 +18,3 @@ pharmacistRouter.get('/queue', async (_req, res) => {
   });
   res.json({ rows: orders.map(toOrderSummary) });
 });
-
-/**
- * Central operations routes. Day 2 only lists stores; stock import and the
- * dashboard are added on Day 3 and Day 6.
- */
-export const opsRouter = Router();
-opsRouter.use(requireAuth, requireRole('OPS'));
-
-opsRouter.get('/stores', async (_req, res) => {
-  const stores = await prisma.store.findMany({
-    orderBy: { name: 'asc' },
-    select: { id: true, code: true, name: true, isActive: true },
-  });
-  res.json(stores);
-});

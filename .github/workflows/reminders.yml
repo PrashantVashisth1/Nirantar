@@ -1,0 +1,26 @@
+name: Daily refill reminders
+
+# Every day at 09:00 IST (03:30 UTC) the API sends the reminders that are due.
+# The job is idempotent, so a delayed or repeated run never sends twice.
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the reminder run
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL or CRON_SECRET is not configured yet; skipping."
+            exit 0
+          fi
+          curl --fail --silent --show-error --max-time 120 \
+            -X POST "$APP_URL/api/internal/reminders/run" \
+            -H "X-Cron-Secret: $CRON_SECRET" \
+            -H "Content-Type: application/json"

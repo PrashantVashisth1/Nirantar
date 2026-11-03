@@ -12,6 +12,9 @@ export const DELIVERY_RADIUS_KM = 8;
 /** A4: orders routed before this hour (IST) are promised for the same day. */
 export const SAME_DAY_CUTOFF_HOUR_IST = 18;
 
+/** Stores whose last stock count is older than this are not used for routing. */
+export const STOCK_STALE_HOURS = 48;
+
 /** Refill reminders go out this many days before the estimated run-out date. */
 export const REMINDER_OFFSETS_DAYS = [5, 2, 0] as const;
 

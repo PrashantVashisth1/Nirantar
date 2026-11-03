@@ -32,6 +32,9 @@ const EnvSchema = z.object({
 
   /** Server-side secret mixed into OTP hashes, so a leaked table can't be brute-forced. */
   OTP_PEPPER: z.string().min(32, 'OTP_PEPPER must be at least 32 characters'),
+
+  /** Shared secret for the scheduled reminder job. Optional: without it the endpoint is off. */
+  CRON_SECRET: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(32).optional()),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

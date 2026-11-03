@@ -11,7 +11,9 @@ import { authRouter } from './http/routes/auth.routes';
 import { customerRouter } from './http/routes/customer.routes';
 import { healthRouter } from './http/routes/health.routes';
 import { meRouter } from './http/routes/me.routes';
-import { opsRouter, pharmacistRouter } from './http/routes/staff.routes';
+import { internalRouter } from './http/routes/internal.routes';
+import { opsRouter } from './http/routes/ops.routes';
+import { pharmacistRouter } from './http/routes/staff.routes';
 
 /**
  * Builds the Express app without starting a server, so tests can call it
@@ -54,10 +56,13 @@ export function createApp() {
   );
 
   app.use('/api', noStore);
+  // Stock CSVs are sent as JSON text and can be up to 2 MB; everything else stays small.
+  app.use('/api/ops/stock-imports', express.json({ limit: '3mb' }));
   app.use(express.json({ limit: '100kb' }));
   app.use('/api', originCheck);
 
   app.use('/api', healthRouter);
+  app.use('/api/internal', internalRouter);
 
   app.use('/api', sessionMiddleware());
   app.use('/api/auth', authRouter);

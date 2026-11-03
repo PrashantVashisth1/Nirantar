@@ -57,4 +57,18 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **Refill subscriptions store `days_supply`,** so the supply bar shows a real "days left out of days supplied" instead of a guess.
 
+## Day 3 · Thu 5 Nov 2026
+
+**Routing: one short transaction per store, with row locks.** For each store (nearest first) we lock its stock rows for the order's products (`SELECT ... FOR UPDATE`, in product order), check every item, and reserve all or nothing. A 20-order race for the last strip gives it to exactly one order. One store per transaction means two orders can never deadlock.
+
+**Stores with a stock count older than 48 hours are not used for routing** (Dum Dum in the demo), so an order isn't sent to a store whose numbers may be wrong.
+
+**Stock import: preview, then all-or-nothing apply.** Any bad row blocks the apply, and nothing changes. The CSV replaces `on_hand` only; `reserved` is untouched because reserved packs are still on the shelf and already counted. Products missing from a store's file become 0 (the file is a full list, A5). The same file can't be applied twice (SHA-256). After an apply, waiting orders are re-routed automatically.
+
+**Reminders are decided once per (subscription, cycle, offset).** A unique key makes the job safe to run twice or in parallel. After a gap only the latest due reminder is sent (older ones are recorded as skipped), and nothing is sent while an order for that medicine is in progress. Messages say "may run out around <date>, based on the dose on the prescription" and never give dosing advice.
+
+**The daily run is a GitHub Actions schedule calling a secret-protected endpoint.** Render's free tier can sleep, so an in-process cron wouldn't be reliable. Without `CRON_SECRET` the endpoint is switched off.
+
+**CSV upload is sent as JSON text (max 2 MB)** with its own body limit, instead of adding multipart handling just for this.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

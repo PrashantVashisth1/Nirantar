@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router';
 import { OnboardingPage } from '../features/auth/OnboardingPage';
 import { SignInPage } from '../features/auth/SignInPage';
 import { HomePage } from '../features/home/HomePage';
+import { OperationsPage } from '../features/operations/OperationsPage';
 import { StaffHomePage } from '../features/staff/StaffHomePage';
 import { BuildingPage, NotFoundPage } from '../pages/BuildingPage';
 import { DesignPreviewPage } from '../pages/DesignPreviewPage';
@@ -20,7 +21,7 @@ export const router = createBrowserRouter([
   { path: '/order/*', element: <RequireRole roles={['CUSTOMER']}><BuildingPage /></RequireRole> },
   { path: '/orders/:id', element: <RequireRole roles={['CUSTOMER']}><BuildingPage /></RequireRole> },
   { path: '/pharmacist/*', element: <RequireRole roles={['PHARMACIST']}><StaffHomePage /></RequireRole> },
-  { path: '/ops/*', element: <RequireRole roles={['OPS']}><StaffHomePage /></RequireRole> },
+  { path: '/ops/*', element: <RequireRole roles={['OPS']}><OperationsPage /></RequireRole> },
   ...(import.meta.env.DEV ? [{ path: '/__design', element: <DesignPreviewPage /> }] : []),
   { path: '*', element: <NotFoundPage /> },
 ]);

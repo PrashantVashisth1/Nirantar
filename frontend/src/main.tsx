@@ -12,6 +12,7 @@ import '@fontsource-variable/noto-serif-devanagari';
 import '@fontsource-variable/noto-serif-bengali';
 import '@fontsource-variable/noto-sans-mono';
 import './styles/globals.css';
+import './i18n';
 
 import { App } from './app/App';
 

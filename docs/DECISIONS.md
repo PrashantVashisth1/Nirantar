@@ -34,4 +34,27 @@ Headers and bodies can contain cookies, phone numbers or health data, so they're
 **Local Postgres on port 5433.**
 Avoids clashing with any Postgres already installed on the default port.
 
+## Day 2 · Wed 4 Nov 2026
+
+**The database enforces the hard part with two triggers and a few CHECK constraints.**
+Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate) refuses PICKING or later unless every active item (OTC included) is approved by an active registered pharmacist and still matches the approved quantity, prescription and product (or the approved generic with recorded consent), plus a verified prescription; handover also needs an H1 register row per H1 item. It runs on INSERT too, so nobody can create an order that is already "packed". 21 tests attack each rule with raw SQL. The seed had to change: RX-50211 is now created as ASSIGNED and moved to PACKED, through the same gate.
+
+**Tests use their own database (`nirantar_test`).** Running tests never wipes the demo data.
+
+**OTP: HMAC with a server secret, not a plain hash.** A 6-digit code has only a million options, so a plain hash could be reversed from a leaked table. The code is returned to the browser only when `APP_ENV` isn't `production`; a test proves it.
+
+**Sessions with express-session + connect-pg-simple** instead of hand-written session code; new session id on login (prevents session fixation).
+
+**Records that belong to someone else return 404, not 403.** A customer can't even learn that another customer's order exists. Non-UUID ids also return 404.
+
+**Customer routes guard each route, not the whole router.** The customer router is mounted at `/api`; a router-wide guard answered "please sign in" for unknown URLs instead of 404. Caught before the tests ran.
+
+**Radix primitives directly, styled with our tokens.** This is what shadcn/ui is built on; using Radix directly means no default shadcn styling to undo.
+
+**No bottom tab bar for customers.** The customer app has one home screen (the plan's C1–C4); account actions live in a sheet. Fewer elements, calmer screen.
+
+**Buttons use a minimum height, not a fixed height.** The Bengali "upload a new prescription to reorder" label overflowed a fixed 56 px button in a screenshot check. Hindi and Bengali dates use the full month name ("3 নভেম্বর"), because the short forms read awkwardly.
+
+**Refill subscriptions store `days_supply`,** so the supply bar shows a real "days left out of days supplied" instead of a guess.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

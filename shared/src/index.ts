@@ -2,3 +2,8 @@ export * from './enums';
 export * from './order-state-machine';
 export * from './money';
 export * from './localities';
+export * from './phone';
+export * from './dates';
+export * from './policies';
+export * from './api/auth';
+export * from './api/types';

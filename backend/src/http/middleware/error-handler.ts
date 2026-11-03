@@ -1,5 +1,6 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
+import { appErrorFromDatabase } from '../../lib/db-errors';
 import { AppError, notFound } from '../../lib/errors';
 import { logger } from '../../lib/logger';
 
@@ -33,6 +34,16 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
         details: err.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message })),
         requestId,
       },
+    });
+    return;
+  }
+
+  // A database safety rule (trigger or CHECK constraint) refused the change.
+  const dbError = appErrorFromDatabase(err);
+  if (dbError) {
+    logger.warn({ code: dbError.code, requestId }, 'Database rule blocked a change');
+    res.status(dbError.status).json({
+      error: { code: dbError.code, message: dbError.message, requestId },
     });
     return;
   }

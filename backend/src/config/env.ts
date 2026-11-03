@@ -26,6 +26,12 @@ const EnvSchema = z.object({
   APP_ORIGIN: z.string().min(1).default('http://localhost:5173'),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+
+  /** Signs the session cookie. Long random string; different per environment. */
+  SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
+
+  /** Server-side secret mixed into OTP hashes, so a leaked table can't be brute-forced. */
+  OTP_PEPPER: z.string().min(32, 'OTP_PEPPER must be at least 32 characters'),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
@@ -45,5 +51,10 @@ function loadEnv(): Env {
 
 export const env = loadEnv();
 
-/** Demo/test-only conveniences (visible OTP, test payments, demo reset). */
-export const isDemoMode = env.APP_ENV !== 'production';
+/**
+ * Demo/test-only conveniences (visible OTP, test payments, demo reset).
+ * A function rather than a constant so tests can check production behaviour.
+ */
+export function isDemoMode(): boolean {
+  return env.APP_ENV !== 'production';
+}

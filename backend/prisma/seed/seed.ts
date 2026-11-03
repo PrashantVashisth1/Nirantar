@@ -209,14 +209,16 @@ async function main() {
     });
     const metformin = product('MET500-S15');
     const address = addressOf.get('debasish')!;
-    await prisma.order.create({
+    // Created as ASSIGNED, then moved to PICKING and PACKED below: the database
+    // dispatch gate refuses to create an order directly in a fulfilment state.
+    const order = await prisma.order.create({
       data: {
         number: 'RX-50211',
         accountId: debasish,
         patientId: patientId.get('anjali')!,
         prescriptionId: prescription.id,
-        status: 'PACKED',
-        version: 5,
+        status: 'ASSIGNED',
+        version: 3,
         storeId: storeId('SLK'),
         previewStoreId: storeId('SLK'),
         deliveryAddress: address,
@@ -227,7 +229,6 @@ async function main() {
         subtotalPaise: lineTotalPaise(metformin.pricePaise, 4),
         totalPaise: lineTotalPaise(metformin.pricePaise, 4),
         remindersOptIn: true,
-        invoiceNo: 'SLK/26/1042',
         routingNote: 'Salt Lake store had all items in stock.',
         promisedBy: minutesAgo(-120),
         verifiedById: sanjukta,
@@ -262,6 +263,11 @@ async function main() {
           ],
         },
       },
+    });
+    await prisma.order.update({ where: { id: order.id }, data: { status: 'PICKING', version: 4 } });
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { status: 'PACKED', invoiceNo: 'SLK/26/1042', version: 5 },
     });
   }
 

@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+
+    # Real Postgres, because the most important tests check database rules
+    # (dispatch gate, stock locking) that a mock can't prove.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: nirantar
+          POSTGRES_PASSWORD: nirantar_ci_only
+          POSTGRES_DB: nirantar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nirantar -d nirantar"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://nirantar:nirantar_ci_only@localhost:5432/nirantar
+      APP_ENV: test
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate -w backend
+      - name: Apply database migrations
+        run: npm run db:deploy -w backend
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

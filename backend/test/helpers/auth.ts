@@ -1,5 +1,5 @@
 import request from 'supertest';
-import type { Express } from 'express';
+type Target = Parameters<typeof request.agent>[0];
 
 /** A random valid Indian mobile number in E.164 form. */
 export function randomPhone(): string {
@@ -7,7 +7,7 @@ export function randomPhone(): string {
 }
 
 /** Signs a customer in through the real OTP flow (demo mode returns the code). */
-export async function signInCustomer(app: Express, phone: string) {
+export async function signInCustomer(app: Target, phone: string) {
   const agent = request.agent(app);
   const requested = await agent.post('/api/auth/otp/request').send({ phone });
   if (requested.status !== 202) throw new Error(`OTP request failed: ${requested.status}`);
@@ -16,7 +16,7 @@ export async function signInCustomer(app: Express, phone: string) {
   return agent;
 }
 
-export async function signInStaff(app: Express, email: string, password = 'correct-horse-battery') {
+export async function signInStaff(app: Target, email: string, password = 'correct-horse-battery') {
   const agent = request.agent(app);
   const res = await agent.post('/api/auth/staff/login').send({ email, password });
   if (res.status !== 200) throw new Error(`Staff login failed: ${res.status}`);

@@ -35,6 +35,16 @@ const EnvSchema = z.object({
 
   /** Shared secret for the scheduled reminder job. Optional: without it the endpoint is off. */
   CRON_SECRET: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(32).optional()),
+
+  /** AES-256 key (32 bytes, base64) for prescription images. Never commit it. */
+  PRESCRIPTION_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, 'base64').length === 32, 'PRESCRIPTION_KEY must be 32 bytes, base64-encoded'),
+
+  /** Gemini (Google AI Studio). Optional: without it, every prescription goes to manual entry. */
+  GEMINI_API_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
+  GEMINI_MODEL: z.string().default('gemini-3.8-flash'),
+  AI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

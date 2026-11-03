@@ -38,6 +38,12 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     return;
   }
 
+  // Upload too large (multer).
+  if (err?.code === 'LIMIT_FILE_SIZE') {
+    res.status(413).json({ error: { code: 'FILE_TOO_LARGE', message: 'The photo must be smaller than 10 MB.', requestId } });
+    return;
+  }
+
   // A database safety rule (trigger or CHECK constraint) refused the change.
   const dbError = appErrorFromDatabase(err);
   if (dbError) {

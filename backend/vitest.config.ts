@@ -16,6 +16,8 @@ export default defineConfig({
       DATABASE_URL: testDatabaseUrl,
       SESSION_SECRET: 'test-session-secret-at-least-32-characters-long',
       OTP_PEPPER: 'test-otp-pepper-at-least-32-characters-long-x',
+      PRESCRIPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
+      GEMINI_API_KEY: '',
     },
     // Integration tests share one database, so run test files one at a time.
     fileParallelism: false,

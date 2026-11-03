@@ -1,0 +1,3 @@
+-- Human-facing order numbers for new orders: RX-50300, RX-50301, ...
+-- (The brief's sample orders RX-50211/50214/50219 are seeded with their own numbers.)
+CREATE SEQUENCE IF NOT EXISTS order_number_seq START WITH 50300;

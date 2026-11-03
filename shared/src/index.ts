@@ -6,4 +6,5 @@ export * from './phone';
 export * from './dates';
 export * from './policies';
 export * from './api/auth';
+export * from './api/orders';
 export * from './api/types';

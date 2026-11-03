@@ -57,6 +57,8 @@ export interface ProductSummaryDto {
   schedule: Schedule;
   pricePaise: number;
   isGeneric: boolean;
+  /** Schedule X / NDPS: shown, but never sold online (plan B1). */
+  blocked?: boolean;
 }
 
 export interface OrderSummaryDto {
@@ -94,6 +96,138 @@ export interface HomeDto {
   refills: RefillDto[];
   activeOrders: OrderSummaryDto[];
   pastOrders: OrderSummaryDto[];
+}
+
+export type MatchQuality = 'STRONG' | 'CHECK' | 'NONE';
+
+/** One medicine line the AI read, matched to our catalog by our own code. */
+export interface DraftLineDto {
+  lineIndex: number;
+  asWritten: string;
+  medicineName: string | null;
+  strength: string | null;
+  dosageText: string | null;
+  durationText: string | null;
+  /** True when the AI said it wasn't sure about the name, strength or dose. */
+  uncertain: boolean;
+  quality: MatchQuality;
+  product: ProductSummaryDto | null;
+  candidates: ProductSummaryDto[];
+  suggestedQuantity: number;
+  dose: { morning: number; noon: number; night: number } | null;
+  durationDays: number | null;
+}
+
+export interface DraftField {
+  value: string | null;
+  uncertain: boolean;
+}
+
+export interface PrescriptionDto {
+  id: string;
+  patientId: string;
+  aiStatus: 'READING' | 'READY' | 'UNSURE' | 'UNREADABLE' | 'FAILED';
+  reviewStatus: 'PENDING' | 'VERIFIED' | 'REUPLOAD_ASKED' | 'REJECTED';
+  createdAt: string;
+  hasImage: boolean;
+  draft: {
+    isPrescription: boolean;
+    legibility: 'clear' | 'partly_legible' | 'illegible';
+    prescriberName: DraftField;
+    prescriberRegNo: DraftField;
+    prescribedOn: DraftField;
+    patientName: DraftField;
+    lines: DraftLineDto[];
+    unreadableLineCount: number;
+  } | null;
+  prescriberName: string | null;
+  prescriberRegNo: string | null;
+  prescribedOn: string | null;
+  /** prescribed date + validity policy (A3). */
+  validUntil: string | null;
+}
+
+export interface QuoteDto {
+  lines: { product: ProductSummaryDto; quantity: number; lineTotalPaise: number; needsPrescription: boolean }[];
+  subtotalPaise: number;
+  totalPaise: number;
+  needsPrescription: boolean;
+  blocked: { productId: string; reason: string }[];
+  delivery: { storeName: string; distanceKm: number; promisedBy: string } | null;
+}
+
+export interface AddressDto {
+  id: string;
+  label: string;
+  line1: string;
+  line2: string | null;
+  localityId: string;
+  localityName: string;
+  pincode: string;
+  isDefault: boolean;
+}
+
+export interface QueueRowDto extends OrderSummaryDto {
+  aiStatus: PrescriptionDto['aiStatus'] | null;
+  hasH1: boolean;
+  reupload: boolean;
+  reviewingBy: string | null;
+  ageYears: number | null;
+}
+
+export interface WorkspaceItemDto {
+  id: string;
+  product: ProductSummaryDto & { molecule: string; strength: string; packUnits: number; form: string };
+  quantity: number;
+  requestedQuantity: number;
+  status: 'ACTIVE' | 'REMOVED';
+  dose: { morning: number; noon: number; night: number } | null;
+  asNeeded: boolean;
+  durationDays: number | null;
+  genericOptions: ProductSummaryDto[];
+  offeredGenericId: string | null;
+}
+
+export interface WorkspaceDto {
+  order: {
+    id: string;
+    number: string;
+    status: OrderStatus;
+    version: number;
+    source: OrderSource;
+    placedAt: string;
+    customerNote: string | null;
+    previewStoreName: string | null;
+  };
+  patient: { fullName: string; relation: Relation; ageYears: number | null };
+  customer: { name: string; phoneMasked: string | null };
+  prescription: PrescriptionDto | null;
+  items: WorkspaceItemDto[];
+  reviewingBy: string | null;
+}
+
+export interface StoreOrderDto {
+  id: string;
+  number: string;
+  status: OrderStatus;
+  version: number;
+  patientName: string;
+  items: { name: string; brand: string; packLabel: string; quantity: number; schedule: Schedule }[];
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  totalPaise: number;
+  promisedBy: string | null;
+  approvedBy: { name: string; regNo: string | null } | null;
+  invoiceNo: string | null;
+  riderName: string | null;
+}
+
+export interface MessageDto {
+  id: string;
+  channel: 'SMS' | 'WHATSAPP' | 'IN_APP';
+  body: string;
+  createdAt: string;
+  orderId: string | null;
 }
 
 export interface OrderItemDto {

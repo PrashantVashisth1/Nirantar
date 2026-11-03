@@ -13,7 +13,7 @@ import { healthRouter } from './http/routes/health.routes';
 import { meRouter } from './http/routes/me.routes';
 import { internalRouter } from './http/routes/internal.routes';
 import { opsRouter } from './http/routes/ops.routes';
-import { pharmacistRouter } from './http/routes/staff.routes';
+import { pharmacistRouter, prescriptionImageRouter } from './http/routes/staff.routes';
 
 /**
  * Builds the Express app without starting a server, so tests can call it
@@ -69,6 +69,7 @@ export function createApp() {
   app.use('/api/me', meRouter);
   app.use('/api/pharmacist', pharmacistRouter);
   app.use('/api/ops', opsRouter);
+  app.use('/api/prescriptions', prescriptionImageRouter);
   app.use('/api', customerRouter);
 
   app.use('/api', notFoundHandler);

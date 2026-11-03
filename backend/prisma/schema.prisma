@@ -1,0 +1,663 @@
+// Nirantar database schema (plan §5).
+//
+// Conventions
+// - Table and column names are snake_case in Postgres (@@map / @map) so raw SQL
+//   (triggers, reports) stays readable; Prisma fields are camelCase in TypeScript.
+// - Money is stored as integer paise (₹1 = 100 paise).
+// - Timestamps are UTC; business dates (run-out dates) are calendar dates in IST.
+// - Enum values match shared/src/enums.ts.
+//
+// Safety rules that the database must enforce on its own (the X/NDPS ban and
+// the dispatch gate, plan §6.2) are added as hand-written SQL in a later migration.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  CUSTOMER
+  PHARMACIST
+  OPS
+}
+
+enum Locale {
+  en
+  hi
+  bn
+}
+
+enum Schedule {
+  OTC
+  H
+  H1
+  X
+  NDPS
+}
+
+enum ProductForm {
+  TABLET
+  CAPSULE
+  SYRUP
+  INJECTION
+  DROPS
+  CREAM
+  DEVICE
+  OTHER
+}
+
+enum Relation {
+  SELF
+  PARENT
+  SPOUSE
+  CHILD
+  SIBLING
+  OTHER
+}
+
+enum OrderStatus {
+  AWAITING_PHARMACIST
+  ON_HOLD_REUPLOAD
+  AWAITING_CUSTOMER
+  APPROVED
+  AWAITING_STOCK
+  ASSIGNED
+  PICKING
+  PACKED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  REJECTED
+  CANCELLED
+}
+
+enum OrderSource {
+  NEW
+  REFILL
+}
+
+enum ItemStatus {
+  ACTIVE
+  REMOVED
+}
+
+enum CustomerChoice {
+  KEEP
+  SWITCH
+}
+
+enum AiStatus {
+  READING
+  READY
+  UNSURE
+  UNREADABLE
+  FAILED
+}
+
+enum ReviewStatus {
+  PENDING
+  VERIFIED
+  REUPLOAD_ASKED
+  REJECTED
+}
+
+enum PaymentMethod {
+  COD
+  UPI_TEST
+}
+
+enum PaymentStatus {
+  NOT_DUE
+  DUE
+  PAID
+  FAILED
+  COD_PENDING
+  COD_COLLECTED
+  VOID
+  REFUNDED
+}
+
+enum ImportStatus {
+  PREVIEW
+  APPLIED
+  DISCARDED
+}
+
+enum AccessAction {
+  VIEW_IMAGE
+  AI_READ
+}
+
+enum MessageChannel {
+  SMS
+  WHATSAPP
+  IN_APP
+}
+
+enum ReminderStatus {
+  SENT
+  SKIPPED
+  SUPPRESSED
+}
+
+// ─── People ──────────────────────────────────────────────────────────────────
+
+/// Customers, pharmacists and operations staff. Customers sign in with a phone
+/// OTP; staff sign in with email + password.
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  role            Role
+  name            String
+  /// E.164 format (+91XXXXXXXXXX). Customers only.
+  phone           String?   @unique
+  /// Lower-cased. Staff only.
+  email           String?   @unique
+  passwordHash    String?   @map("password_hash")
+  locale          Locale    @default(en)
+  /// Pharmacists belong to one store and fulfil its orders (plan A2).
+  storeId         String?   @map("store_id") @db.Uuid
+  pharmacistRegNo String?   @map("pharmacist_reg_no")
+  isActive        Boolean   @default(true) @map("is_active")
+  /// When the customer agreed to us storing their prescriptions (DPDP consent).
+  consentAt       DateTime? @map("consent_at")
+  remindersOptIn  Boolean   @default(false) @map("reminders_opt_in")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  store                Store?                  @relation(fields: [storeId], references: [id])
+  patients             Patient[]
+  addresses            Address[]
+  orders               Order[]                 @relation("OrderAccount")
+  uploadedPrescriptions Prescription[]         @relation("PrescriptionUploader")
+  verifiedPrescriptions Prescription[]         @relation("PrescriptionVerifier")
+  verifiedOrders       Order[]                 @relation("OrderVerifier")
+  reviewingOrders      Order[]                 @relation("OrderReviewer")
+  approvedItems        OrderItem[]             @relation("ItemApprover")
+  prescriptionAccess   PrescriptionAccessLog[]
+  orderEvents          OrderEvent[]
+  h1Entries            H1RegisterEntry[]
+  stockImports         StockImport[]
+  messages             Message[]
+  confirmedRefills     RefillSubscription[]    @relation("RefillConfirmedBy")
+  refillSubscriptions  RefillSubscription[]    @relation("RefillAccount")
+
+  @@index([role])
+  @@map("users")
+}
+
+/// One-time sign-in codes. Only a hash of the code is stored.
+model OtpCode {
+  id         String    @id @default(uuid()) @db.Uuid
+  phone      String
+  codeHash   String    @map("code_hash")
+  expiresAt  DateTime  @map("expires_at")
+  attempts   Int       @default(0)
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([phone, createdAt])
+  @@map("otp_codes")
+}
+
+/// Login sessions, stored by express-session (connect-pg-simple). Column names
+/// match what that library expects.
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire])
+  @@map("session")
+}
+
+/// Family profiles: the people a customer orders for ("Maa", "Myself").
+model Patient {
+  id         String    @id @default(uuid()) @db.Uuid
+  accountId  String    @map("account_id") @db.Uuid
+  fullName   String    @map("full_name")
+  relation   Relation
+  /// Birth year only (data minimisation); enough for the pharmacist to see age.
+  birthYear  Int?      @map("birth_year")
+  archivedAt DateTime? @map("archived_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  account       User                 @relation(fields: [accountId], references: [id])
+  prescriptions Prescription[]
+  orders        Order[]
+  refills       RefillSubscription[]
+
+  @@index([accountId])
+  @@map("patients")
+}
+
+model Address {
+  id         String   @id @default(uuid()) @db.Uuid
+  accountId  String   @map("account_id") @db.Uuid
+  label      String
+  line1      String
+  line2      String?
+  /// Id from shared/src/localities.ts; lat/lng copied from it (plan A4).
+  localityId String   @map("locality_id")
+  pincode    String
+  lat        Float
+  lng        Float
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  account User @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@map("addresses")
+}
+
+// ─── Stores, catalog and stock ───────────────────────────────────────────────
+
+model Store {
+  id         String  @id @default(uuid()) @db.Uuid
+  code       String  @unique
+  name       String
+  localityId String  @map("locality_id")
+  lat        Float
+  lng        Float
+  isActive   Boolean @default(true) @map("is_active")
+
+  stock       StoreStock[]
+  orders      Order[]           @relation("OrderStore")
+  previewFor  Order[]           @relation("OrderPreviewStore")
+  pharmacists User[]
+  h1Entries   H1RegisterEntry[]
+
+  @@map("stores")
+}
+
+/// Synthetic catalog (plan A9). Price is per pack.
+model Product {
+  id            String      @id @default(uuid()) @db.Uuid
+  sku           String      @unique
+  /// Display name, e.g. "Glycora 500" or "Metformin 500 mg (generic)".
+  name          String
+  /// Active ingredient, used to find generic alternatives.
+  molecule      String
+  /// Human-readable strength, e.g. "500 mg", "50 mcg".
+  strength      String
+  form          ProductForm
+  /// e.g. "Strip of 15", "Bottle of 100".
+  packLabel     String      @map("pack_label")
+  /// Units in one pack (tablets in a strip, tablets in a bottle).
+  packUnits     Int         @map("pack_units")
+  pricePaise    Int         @map("price_paise")
+  schedule      Schedule
+  isGeneric     Boolean     @default(false) @map("is_generic")
+  manufacturer  String
+  /// Other names a prescription might use (brand names, abbreviations).
+  aliases       String[]    @default([])
+  isActive      Boolean     @default(true) @map("is_active")
+
+  stock          StoreStock[]
+  orderItems     OrderItem[]          @relation("ItemProduct")
+  approvedAs     OrderItem[]          @relation("ItemApprovedProduct")
+  approvedGeneric OrderItem[]         @relation("ItemApprovedGeneric")
+  requestedAs    OrderItem[]          @relation("ItemRequestedProduct")
+  h1Entries      H1RegisterEntry[]
+  refills        RefillSubscription[]
+
+  @@index([molecule, strength, form])
+  @@map("products")
+}
+
+/// Configurable rules for OTC, H and H1 (plan B2). Schedule X and NDPS
+/// deliberately have NO row: their online ban is fixed, not configurable (B1).
+model ScheduleRule {
+  schedule         Schedule @id
+  rxRequired       Boolean  @map("rx_required")
+  registerRequired Boolean  @map("register_required")
+  label            String
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("schedule_rules")
+}
+
+/// Stock per store and product, in packs (plan §6.4).
+/// available = on_hand - reserved.
+model StoreStock {
+  storeId   String    @map("store_id") @db.Uuid
+  productId String    @map("product_id") @db.Uuid
+  /// Packs physically in the store (set from the morning CSV count).
+  onHand    Int       @map("on_hand")
+  /// Packs held for routed orders that haven't been handed over yet.
+  reserved  Int       @default(0)
+  countedAt DateTime? @map("counted_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  store   Store   @relation(fields: [storeId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@id([storeId, productId])
+  @@index([productId])
+  @@map("store_stock")
+}
+
+/// One uploaded stock CSV. Parsed rows and errors are kept as JSON so the
+/// preview and the apply step work from exactly the same data.
+model StockImport {
+  id           String       @id @default(uuid()) @db.Uuid
+  fileName     String       @map("file_name")
+  sha256       String
+  status       ImportStatus @default(PREVIEW)
+  rows         Json
+  summary      Json
+  errorCount   Int          @map("error_count")
+  uploadedById String       @map("uploaded_by_id") @db.Uuid
+  createdAt    DateTime     @default(now()) @map("created_at")
+  appliedAt    DateTime?    @map("applied_at")
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([sha256])
+  @@map("stock_imports")
+}
+
+// ─── Prescriptions ───────────────────────────────────────────────────────────
+
+model Prescription {
+  id              String       @id @default(uuid()) @db.Uuid
+  patientId       String       @map("patient_id") @db.Uuid
+  uploadedById    String       @map("uploaded_by_id") @db.Uuid
+  /// Set when this upload replaces one the pharmacist asked to re-upload.
+  replacesId      String?      @unique @map("replaces_id") @db.Uuid
+  aiStatus        AiStatus     @default(READING) @map("ai_status")
+  /// Used to recover reads stuck in READING (plan §8).
+  aiStartedAt     DateTime?    @map("ai_started_at")
+  aiDraft         Json?        @map("ai_draft")
+  aiModel         String?      @map("ai_model")
+  reviewStatus    ReviewStatus @default(PENDING) @map("review_status")
+  /// Details verified by the pharmacist (required for H1 items, plan B8).
+  prescriberName  String?      @map("prescriber_name")
+  prescriberRegNo String?      @map("prescriber_reg_no")
+  prescribedOn    DateTime?    @map("prescribed_on") @db.Date
+  patientNameOnRx String?      @map("patient_name_on_rx")
+  verifiedById    String?      @map("verified_by_id") @db.Uuid
+  verifiedAt      DateTime?    @map("verified_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  patient     Patient                 @relation(fields: [patientId], references: [id])
+  uploadedBy  User                    @relation("PrescriptionUploader", fields: [uploadedById], references: [id])
+  verifiedBy  User?                   @relation("PrescriptionVerifier", fields: [verifiedById], references: [id])
+  replaces    Prescription?           @relation("PrescriptionReplacement", fields: [replacesId], references: [id])
+  replacedBy  Prescription?           @relation("PrescriptionReplacement")
+  file        PrescriptionFile?
+  accessLogs  PrescriptionAccessLog[]
+  orders      Order[]
+  approvedFor OrderItem[]             @relation("ItemApprovedPrescription")
+  refills     RefillSubscription[]
+
+  @@index([patientId, createdAt])
+  @@map("prescriptions")
+}
+
+/// The encrypted image (AES-256-GCM). Kept in its own table so listing
+/// prescriptions never loads the file bytes.
+model PrescriptionFile {
+  prescriptionId String   @id @map("prescription_id") @db.Uuid
+  ciphertext     Bytes
+  iv             Bytes
+  authTag        Bytes    @map("auth_tag")
+  mimeType       String   @map("mime_type")
+  byteSize       Int      @map("byte_size")
+  sha256         String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@map("prescription_files")
+}
+
+/// Who looked at (or processed) which prescription, and when (DPDP access log).
+model PrescriptionAccessLog {
+  id             String       @id @default(uuid()) @db.Uuid
+  prescriptionId String       @map("prescription_id") @db.Uuid
+  /// Null when the system itself read the file (AI extraction).
+  userId         String?      @map("user_id") @db.Uuid
+  action         AccessAction
+  orderId        String?      @map("order_id") @db.Uuid
+  at             DateTime     @default(now())
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@index([prescriptionId, at])
+  @@index([userId, at])
+  @@map("prescription_access_logs")
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+model Order {
+  id              String        @id @default(uuid()) @db.Uuid
+  /// Human-facing number, e.g. "RX-50211".
+  number          String        @unique
+  accountId       String        @map("account_id") @db.Uuid
+  patientId       String        @map("patient_id") @db.Uuid
+  prescriptionId  String?       @map("prescription_id") @db.Uuid
+  source          OrderSource   @default(NEW)
+  status          OrderStatus   @default(AWAITING_PHARMACIST)
+  /// Incremented on every change; stale screens get a 409 instead of overwriting.
+  version         Int           @default(1)
+  /// Store the order is assigned to (set by routing).
+  storeId         String?       @map("store_id") @db.Uuid
+  /// Non-binding nearest-store preview shown before approval (plan A12).
+  previewStoreId  String?       @map("preview_store_id") @db.Uuid
+  /// Copy of the delivery address at order time.
+  deliveryAddress Json          @map("delivery_address")
+  deliveryLat     Float         @map("delivery_lat")
+  deliveryLng     Float         @map("delivery_lng")
+  customerNote    String?       @map("customer_note")
+  paymentMethod   PaymentMethod @default(COD) @map("payment_method")
+  paymentStatus   PaymentStatus @default(NOT_DUE) @map("payment_status")
+  subtotalPaise   Int           @map("subtotal_paise")
+  totalPaise      Int           @map("total_paise")
+  remindersOptIn  Boolean       @default(false) @map("reminders_opt_in")
+  /// Store's own invoice number, entered when packing.
+  invoiceNo       String?       @map("invoice_no")
+  riderName       String?       @map("rider_name")
+  routingNote     String?       @map("routing_note")
+  promisedBy      DateTime?     @map("promised_by")
+  /// Shown in the queue as "being reviewed by" (informational, not a lock).
+  reviewingById   String?       @map("reviewing_by_id") @db.Uuid
+  reviewingAt     DateTime?     @map("reviewing_at")
+  verifiedById    String?       @map("verified_by_id") @db.Uuid
+  verifiedAt      DateTime?     @map("verified_at")
+  rejectionReason String?       @map("rejection_reason")
+  rejectionNote   String?       @map("rejection_note")
+  reuploadReason  String?       @map("reupload_reason")
+  placedAt        DateTime      @default(now()) @map("placed_at")
+  deliveredAt     DateTime?     @map("delivered_at")
+  cancelledAt     DateTime?     @map("cancelled_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  account      User              @relation("OrderAccount", fields: [accountId], references: [id])
+  patient      Patient           @relation(fields: [patientId], references: [id])
+  prescription Prescription?     @relation(fields: [prescriptionId], references: [id])
+  store        Store?            @relation("OrderStore", fields: [storeId], references: [id])
+  previewStore Store?            @relation("OrderPreviewStore", fields: [previewStoreId], references: [id])
+  reviewingBy  User?             @relation("OrderReviewer", fields: [reviewingById], references: [id])
+  verifiedBy   User?             @relation("OrderVerifier", fields: [verifiedById], references: [id])
+  items        OrderItem[]
+  events       OrderEvent[]
+  h1Entries    H1RegisterEntry[]
+  messages     Message[]
+
+  @@unique([storeId, invoiceNo])
+  @@index([accountId, placedAt])
+  @@index([status, placedAt])
+  @@index([storeId, status])
+  @@map("orders")
+}
+
+/// One medicine line. The approved_* columns record exactly what the
+/// pharmacist approved; the dispatch gate compares them with the current
+/// values (plan B4-B7).
+model OrderItem {
+  id                       String          @id @default(uuid()) @db.Uuid
+  orderId                  String          @map("order_id") @db.Uuid
+  productId                String          @map("product_id") @db.Uuid
+  quantity                 Int
+  /// What the customer originally asked for (to detect pharmacist changes).
+  requestedProductId       String          @map("requested_product_id") @db.Uuid
+  requestedQuantity        Int             @map("requested_quantity")
+  unitPricePaise           Int             @map("unit_price_paise")
+  status                   ItemStatus      @default(ACTIVE)
+  removedReason            String?         @map("removed_reason")
+  /// The line as written on the prescription (from the AI draft), for the pharmacist.
+  asWritten                String?         @map("as_written")
+  /// Dose confirmed by the pharmacist: tablets in the morning / noon / night.
+  doseMorning              Float?          @map("dose_morning")
+  doseNoon                 Float?          @map("dose_noon")
+  doseNight                Float?          @map("dose_night")
+  doseAsNeeded             Boolean         @default(false) @map("dose_as_needed")
+  durationDays             Int?            @map("duration_days")
+  approvedById             String?         @map("approved_by_id") @db.Uuid
+  approvedAt               DateTime?       @map("approved_at")
+  approvedProductId        String?         @map("approved_product_id") @db.Uuid
+  approvedQuantity         Int?            @map("approved_quantity")
+  approvedPrescriptionId   String?         @map("approved_prescription_id") @db.Uuid
+  /// A cheaper generic the pharmacist offered (offering it approves it).
+  approvedGenericProductId String?         @map("approved_generic_product_id") @db.Uuid
+  customerChoice           CustomerChoice? @map("customer_choice")
+  consentAt                DateTime?       @map("consent_at")
+  createdAt                DateTime        @default(now()) @map("created_at")
+
+  order                Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product              Product       @relation("ItemProduct", fields: [productId], references: [id])
+  requestedProduct     Product       @relation("ItemRequestedProduct", fields: [requestedProductId], references: [id])
+  approvedBy           User?         @relation("ItemApprover", fields: [approvedById], references: [id])
+  approvedProduct      Product?      @relation("ItemApprovedProduct", fields: [approvedProductId], references: [id])
+  approvedPrescription Prescription? @relation("ItemApprovedPrescription", fields: [approvedPrescriptionId], references: [id])
+  approvedGeneric      Product?      @relation("ItemApprovedGeneric", fields: [approvedGenericProductId], references: [id])
+  h1Entry              H1RegisterEntry?
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+/// Timeline and audit trail: every status change and decision, with who did it.
+model OrderEvent {
+  id         String       @id @default(uuid()) @db.Uuid
+  orderId    String       @map("order_id") @db.Uuid
+  fromStatus OrderStatus? @map("from_status")
+  toStatus   OrderStatus  @map("to_status")
+  actorId    String?      @map("actor_id") @db.Uuid
+  /// CUSTOMER, PHARMACIST, OPS or SYSTEM.
+  actorRole  String       @map("actor_role")
+  note       String?
+  at         DateTime     @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([orderId, at])
+  @@map("order_events")
+}
+
+/// H1 register entry, written at handover (plan A13, B8).
+model H1RegisterEntry {
+  id              String   @id @default(uuid()) @db.Uuid
+  orderItemId     String   @unique @map("order_item_id") @db.Uuid
+  orderId         String   @map("order_id") @db.Uuid
+  productId       String   @map("product_id") @db.Uuid
+  quantity        Int
+  patientName     String   @map("patient_name")
+  patientAddress  String   @map("patient_address")
+  prescriberName  String   @map("prescriber_name")
+  prescriberRegNo String   @map("prescriber_reg_no")
+  pharmacistId    String   @map("pharmacist_id") @db.Uuid
+  storeId         String   @map("store_id") @db.Uuid
+  suppliedAt      DateTime @default(now()) @map("supplied_at")
+
+  orderItem  OrderItem @relation(fields: [orderItemId], references: [id])
+  order      Order     @relation(fields: [orderId], references: [id])
+  product    Product   @relation(fields: [productId], references: [id])
+  pharmacist User      @relation(fields: [pharmacistId], references: [id])
+  store      Store     @relation(fields: [storeId], references: [id])
+
+  @@index([suppliedAt])
+  @@map("h1_register")
+}
+
+// ─── Refills and messages ────────────────────────────────────────────────────
+
+/// Tracks when a patient's supply of one medicine runs out (plan §6.5).
+/// Only created from pharmacist-confirmed dose and dispensed quantity.
+model RefillSubscription {
+  id               String   @id @default(uuid()) @db.Uuid
+  accountId        String   @map("account_id") @db.Uuid
+  patientId        String   @map("patient_id") @db.Uuid
+  productId        String   @map("product_id") @db.Uuid
+  prescriptionId   String?  @map("prescription_id") @db.Uuid
+  lastOrderId      String?  @map("last_order_id") @db.Uuid
+  /// Units taken per day, from the pharmacist-confirmed dose (e.g. 1-0-1 = 2).
+  dailyUnits       Float    @map("daily_units")
+  /// Estimated date the medicine runs out (IST calendar date).
+  runOutOn         DateTime @map("run_out_on") @db.Date
+  /// Increases each time the medicine is refilled; reminders are per cycle.
+  cycle            Int      @default(1)
+  remindersEnabled Boolean  @default(true) @map("reminders_enabled")
+  isActive         Boolean  @default(true) @map("is_active")
+  confirmedById    String   @map("confirmed_by_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  account      User          @relation("RefillAccount", fields: [accountId], references: [id])
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  product      Product       @relation(fields: [productId], references: [id])
+  prescription Prescription? @relation(fields: [prescriptionId], references: [id])
+  confirmedBy  User          @relation("RefillConfirmedBy", fields: [confirmedById], references: [id])
+  reminders    Reminder[]
+
+  @@unique([patientId, productId])
+  @@index([isActive, runOutOn])
+  @@map("refill_subscriptions")
+}
+
+/// One reminder decision. The unique key makes the daily job safe to run twice.
+model Reminder {
+  id             String         @id @default(uuid()) @db.Uuid
+  subscriptionId String         @map("subscription_id") @db.Uuid
+  cycle          Int
+  /// Days before run-out: 5, 2 or 0.
+  offsetDays     Int            @map("offset_days")
+  status         ReminderStatus
+  reason         String?
+  messageId      String?        @unique @map("message_id") @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  subscription RefillSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  message      Message?           @relation(fields: [messageId], references: [id])
+
+  @@unique([subscriptionId, cycle, offsetDays])
+  @@map("reminders")
+}
+
+/// Test-mode outbox: SMS / WhatsApp / in-app messages we would have sent.
+/// Shown to the customer in the "Test inbox"; nothing is really sent (plan A14).
+model Message {
+  id        String         @id @default(uuid()) @db.Uuid
+  accountId String         @map("account_id") @db.Uuid
+  channel   MessageChannel
+  body      String
+  orderId   String?        @map("order_id") @db.Uuid
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  account  User      @relation(fields: [accountId], references: [id])
+  order    Order?    @relation(fields: [orderId], references: [id])
+  reminder Reminder?
+
+  @@index([accountId, createdAt])
+  @@map("messages")
+}

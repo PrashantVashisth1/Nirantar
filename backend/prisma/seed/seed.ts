@@ -6,7 +6,7 @@
  * Run with: npm run db:seed (from the repo root or backend/).
  */
 import { hash } from '@node-rs/argon2';
-import { findLocality, lineTotalPaise } from '@nirantar/shared';
+import { addDays, findLocality, lineTotalPaise, todayIst } from '@nirantar/shared';
 import { env } from '../../src/config/env';
 import { prisma } from '../../src/lib/db';
 import type { OrderStatus, Prisma } from '../../src/generated/prisma/client';
@@ -392,12 +392,80 @@ async function main() {
     });
   }
 
+  // ── Refill subscriptions (pharmacist-confirmed dose; run-out dates relative to today) ──
+  // Each one would normally come from a delivered order; the full delivered
+  // history is added in seed v2. Different cases are covered on purpose:
+  // due soon, reorder already in progress, runs out today, prescription expired.
+  const today = todayIst(now);
+  const verifiedRx = async (patientKey: string, accountKey: string, prescribedOn: string, prescriber: string) =>
+    prisma.prescription.create({
+      data: {
+        patientId: patientId.get(patientKey)!,
+        uploadedById: customerId.get(accountKey)!,
+        aiStatus: 'READY',
+        reviewStatus: 'VERIFIED',
+        prescriberName: prescriber,
+        prescriberRegNo: 'DEMO-WB-' + stableNumber(prescriber, 10000, 99999),
+        prescribedOn: new Date(prescribedOn),
+        verifiedById: sanjukta,
+        verifiedAt: daysAgo(30),
+        createdAt: daysAgo(31),
+      },
+    });
+
+  const anjaliRx = await prisma.prescription.findFirstOrThrow({
+    where: { patientId: patientId.get('anjali')!, reviewStatus: 'VERIFIED' },
+  });
+  const debasishRx = await verifiedRx('debasish-self', 'debasish', '2026-07-20', 'Dr. A. Mukherjee');
+  const rinaOldRx = await verifiedRx('rina-self', 'rina', '2026-04-02', 'Dr. P. Sarkar');
+  const haripadaRx = await verifiedRx('haripada', 'sudipta', '2026-05-15', 'Dr. R. Basu');
+  const farhanaRx = await verifiedRx('farhana-self', 'farhana', '2026-03-01', 'Dr. N. Islam');
+
+  const subscriptions: {
+    account: string;
+    patient: string;
+    sku: string;
+    dailyUnits: number;
+    /** Days the last fill lasts: units dispensed ÷ daily units. */
+    daysSupply: number;
+    daysLeft: number;
+    prescriptionId: string;
+  }[] = [
+    // Reorder already in progress: RX-50211 is this refill (4 strips × 15 at 1-0-1 = 30 days).
+    { account: 'debasish', patient: 'anjali', sku: 'MET500-S15', dailyUnits: 2, daysSupply: 30, daysLeft: 5, prescriptionId: anjaliRx.id },
+    // Due soon, nothing ordered yet: shows the Reorder button (3 strips × 10 at 1 a day).
+    { account: 'debasish', patient: 'debasish-self', sku: 'AML5-S10', dailyUnits: 1, daysSupply: 30, daysLeft: 4, prescriptionId: debasishRx.id },
+    // Not due yet: a quiet row (bottle of 100 at 1 a day).
+    { account: 'debasish', patient: 'anjali', sku: 'LEV25-B100', dailyUnits: 1, daysSupply: 100, daysLeft: 19, prescriptionId: anjaliRx.id },
+    // Rina's new order RX-50214 is in progress; her old prescription has expired under the policy.
+    { account: 'rina', patient: 'rina-self', sku: 'TEL40-S10', dailyUnits: 1, daysSupply: 30, daysLeft: 2, prescriptionId: rinaOldRx.id },
+    // Runs out today.
+    { account: 'sudipta', patient: 'haripada', sku: 'ATV10-S10', dailyUnits: 1, daysSupply: 30, daysLeft: 0, prescriptionId: haripadaRx.id },
+    // Ran out yesterday and the prescription has expired: needs a new upload.
+    { account: 'farhana', patient: 'farhana-self', sku: 'GLM2-S10', dailyUnits: 1, daysSupply: 30, daysLeft: -1, prescriptionId: farhanaRx.id },
+  ];
+  for (const sub of subscriptions) {
+    await prisma.refillSubscription.create({
+      data: {
+        accountId: customerId.get(sub.account)!,
+        patientId: patientId.get(sub.patient)!,
+        productId: product(sub.sku).id,
+        prescriptionId: sub.prescriptionId,
+        dailyUnits: sub.dailyUnits,
+        daysSupply: sub.daysSupply,
+        runOutOn: addDays(today, sub.daysLeft),
+        confirmedById: sanjukta,
+      },
+    });
+  }
+
   const counts = {
     stores: await prisma.store.count(),
     products: await prisma.product.count(),
     users: await prisma.user.count(),
     patients: await prisma.patient.count(),
     orders: await prisma.order.count(),
+    refills: await prisma.refillSubscription.count(),
   };
   console.log('Seed complete:', counts);
 }

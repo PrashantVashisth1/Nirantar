@@ -603,6 +603,8 @@ model RefillSubscription {
   lastOrderId      String?  @map("last_order_id") @db.Uuid
   /// Units taken per day, from the pharmacist-confirmed dose (e.g. 1-0-1 = 2).
   dailyUnits       Float    @map("daily_units")
+  /// Days the last fill was meant to last (units dispensed ÷ daily units).
+  daysSupply       Int      @map("days_supply")
   /// Estimated date the medicine runs out (IST calendar date).
   runOutOn         DateTime @map("run_out_on") @db.Date
   /// Increases each time the medicine is refilled; reminders are per cycle.

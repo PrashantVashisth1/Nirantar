@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { isDemoMode } from '../../config/env';
 import { prisma } from '../../lib/db';
 
 export const healthRouter = Router();
@@ -9,6 +10,11 @@ export const healthRouter = Router();
  */
 healthRouter.get('/health', (_req, res) => {
   res.json({ ok: true });
+});
+
+/** Public settings the frontend needs before sign-in (no secrets here). */
+healthRouter.get('/config', (_req, res) => {
+  res.json({ testMode: isDemoMode() });
 });
 
 /** Readiness: can we reach the database? */

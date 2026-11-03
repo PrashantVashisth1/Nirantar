@@ -80,6 +80,8 @@ export interface RefillDto {
   runOutOn: string;
   /** Negative when the estimated run-out date has passed. */
   daysLeft: number;
+  /** Days the last fill was meant to last (for the supply bar). */
+  daysSupply: number;
   remindersEnabled: boolean;
   /** False when the prescription on file is older than the validity policy (plan A3). */
   prescriptionValid: boolean;

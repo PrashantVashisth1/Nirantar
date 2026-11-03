@@ -99,6 +99,7 @@ export async function getHome(accountId: string, now = new Date()): Promise<Home
       product: toProductSummary(sub.product),
       runOutOn: sub.runOutOn.toISOString().slice(0, 10),
       daysLeft: daysBetween(today, sub.runOutOn),
+      daysSupply: sub.daysSupply,
       remindersEnabled: sub.remindersEnabled,
       prescriptionValid: prescribedOn ? addDays(prescribedOn, RX_VALIDITY_DAYS) >= today : false,
       orderInProgress: inProgress ? { id: inProgress.id, number: inProgress.number } : null,

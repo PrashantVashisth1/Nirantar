@@ -16,7 +16,13 @@ export function BuildingPage() {
       <EmptyState
         title={t('common.comingSoon')}
         action={
-          <ButtonLink to="/home" variant="secondary" size="lg" fullWidth icon={<ArrowLeft className="size-5" aria-hidden />}>
+          <ButtonLink
+            to="/home"
+            variant="secondary"
+            size="lg"
+            fullWidth
+            icon={<ArrowLeft className="size-5" aria-hidden />}
+          >
             {t('common.back')}
           </ButtonLink>
         }

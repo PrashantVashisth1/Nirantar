@@ -20,13 +20,19 @@ export const PlaceOrderSchema = z
     patientId: id,
     addressId: id,
     prescriptionId: id.optional(),
-    items: z.array(CartItemSchema).min(1, 'Add at least one medicine.').max(20),
+    // Empty is allowed only with a prescription photo: the pharmacist then adds the medicines
+    // (e.g. when the AI couldn't read it, plan §8).
+    items: z.array(CartItemSchema).max(20),
     paymentMethod: z.enum(PAYMENT_METHODS),
     remindersOptIn: z.boolean(),
     note: z.string().trim().max(500).optional(),
     source: z.enum(['NEW', 'REFILL']).default('NEW'),
   })
-  .strict();
+  .strict()
+  .refine((o) => o.items.length > 0 || Boolean(o.prescriptionId), {
+    message: 'Add at least one medicine or a prescription photo.',
+    path: ['items'],
+  });
 
 export const NewAddressSchema = z
   .object({

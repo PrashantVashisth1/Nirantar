@@ -1,5 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { normalizeIndianMobile, maskPhone, type MeDto, type OtpRequestResult } from '@nirantar/shared';
+import {
+  normalizeIndianMobile,
+  maskPhone,
+  type MeDto,
+  type OtpRequestResult,
+} from '@nirantar/shared';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate } from 'react-router';
@@ -65,7 +70,8 @@ function CustomerSignIn() {
   const [secondsLeft, setSecondsLeft] = useState(0);
 
   const requestCode = useMutation({
-    mutationFn: (normalized: string) => api.post<OtpRequestResult>('/auth/otp/request', { phone: normalized }),
+    mutationFn: (normalized: string) =>
+      api.post<OtpRequestResult>('/auth/otp/request', { phone: normalized }),
     onSuccess: (result, normalized) => {
       setSent({ ...result, phone: normalized });
       setSecondsLeft(result.resendAfterSeconds);
@@ -109,7 +115,9 @@ function CustomerSignIn() {
           <TextField
             label={t('signIn.phoneLabel')}
             hint={t('signIn.phoneHint')}
-            error={phoneError ?? (requestCode.error ? errorMessage(requestCode.error, t) : undefined)}
+            error={
+              phoneError ?? (requestCode.error ? errorMessage(requestCode.error, t) : undefined)
+            }
             prefix="+91"
             type="tel"
             inputMode="numeric"
@@ -137,7 +145,9 @@ function CustomerSignIn() {
       noValidate
     >
       <h1 className="font-serif text-title font-semibold text-ink">{t('signIn.codeTitle')}</h1>
-      <p className="mt-2 text-body-lg text-ink-2">{t('signIn.codeSentTo', { phone: maskPhone(sent.phone) })}</p>
+      <p className="mt-2 text-body-lg text-ink-2">
+        {t('signIn.codeSentTo', { phone: maskPhone(sent.phone) })}
+      </p>
 
       {sent.demoCode && (
         <Banner tone="warning" className="mt-6" title={`${t('signIn.demoCode')} ${sent.demoCode}`}>
@@ -164,16 +174,29 @@ function CustomerSignIn() {
           autoFocus
         />
       </div>
-      <Button type="submit" size="xl" fullWidth className="mt-6" loading={verify.isPending} disabled={code.length !== 6}>
+      <Button
+        type="submit"
+        size="xl"
+        fullWidth
+        className="mt-6"
+        loading={verify.isPending}
+        disabled={code.length !== 6}
+      >
         {verify.isPending ? t('signIn.verifying') : t('signIn.verify')}
       </Button>
 
       <div className="mt-4 flex items-center justify-between gap-2">
-        <button type="button" className="h-11 px-1 text-body text-pine hover:underline" onClick={() => setSent(null)}>
+        <button
+          type="button"
+          className="h-11 px-1 text-body text-pine hover:underline"
+          onClick={() => setSent(null)}
+        >
           {t('signIn.changeNumber')}
         </button>
         {secondsLeft > 0 ? (
-          <span className="text-body text-ink-3 tabular-nums">{t('signIn.resendIn', { seconds: secondsLeft })}</span>
+          <span className="text-body text-ink-3 tabular-nums">
+            {t('signIn.resendIn', { seconds: secondsLeft })}
+          </span>
         ) : (
           <button
             type="button"
@@ -185,7 +208,9 @@ function CustomerSignIn() {
           </button>
         )}
       </div>
-      {requestCode.error && <p className="mt-2 text-caption text-danger">{errorMessage(requestCode.error, t)}</p>}
+      {requestCode.error && (
+        <p className="mt-2 text-caption text-danger">{errorMessage(requestCode.error, t)}</p>
+      )}
     </form>
   );
 }
@@ -232,7 +257,14 @@ function StaffSignIn() {
       {login.error && (
         <Banner tone="danger" className="mt-5" title={errorMessage(login.error, t)} />
       )}
-      <Button type="submit" size="xl" fullWidth className="mt-6" loading={login.isPending} disabled={!email || !password}>
+      <Button
+        type="submit"
+        size="xl"
+        fullWidth
+        className="mt-6"
+        loading={login.isPending}
+        disabled={!email || !password}
+      >
         {login.isPending ? t('signIn.signingIn') : t('signIn.signInButton')}
       </Button>
     </form>

@@ -29,7 +29,11 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError(0, 'NETWORK', "We couldn't reach the server. Check your connection and try again.");
+    throw new ApiError(
+      0,
+      'NETWORK',
+      "We couldn't reach the server. Check your connection and try again.",
+    );
   }
 
   if (response.status === 204) return undefined as T;

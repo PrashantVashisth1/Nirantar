@@ -234,6 +234,8 @@ export interface OrderItemDto {
   id: string;
   product: ProductSummaryDto;
   quantity: number;
+  requestedQuantity: number;
+  requestedProductId: string;
   unitPricePaise: number;
   status: 'ACTIVE' | 'REMOVED';
   removedReason: string | null;
@@ -263,4 +265,8 @@ export interface OrderDetailDto extends OrderSummaryDto {
   verifiedBy: { name: string; regNo: string | null } | null;
   deliveryAddress: unknown;
   previewStoreName: string | null;
+  prescriptionId: string | null;
+  prescriptionHasImage: boolean;
+  promisedBy: string | null;
+  routingNote: string | null;
 }

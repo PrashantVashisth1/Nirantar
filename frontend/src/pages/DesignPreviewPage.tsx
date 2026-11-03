@@ -4,7 +4,10 @@
  * It is used to check the visual system before building real screens.
  */
 
-const COLOUR_GROUPS: { title: string; colours: { name: string; hex: string; className: string }[] }[] = [
+const COLOUR_GROUPS: {
+  title: string;
+  colours: { name: string; hex: string; className: string }[];
+}[] = [
   {
     title: 'Paper & ink',
     colours: [
@@ -106,11 +109,23 @@ export function DesignPreviewPage() {
         </div>
         <dl className="mt-8 divide-y divide-line border-y border-line">
           {[
-            ['display · 30 serif', 'font-serif text-display font-semibold', 'Your pharmacist is checking'],
+            [
+              'display · 30 serif',
+              'font-serif text-display font-semibold',
+              'Your pharmacist is checking',
+            ],
             ['title · 26 serif', 'font-serif text-title font-semibold', 'Good evening, Debasish'],
             ['heading · 21', 'text-heading font-semibold', 'For Maa · Anjali Ghosh'],
-            ['body-lg · 18', 'text-body-lg', 'Metformin 500 mg · 4 strips · runs out around Fri 13 Nov'],
-            ['body · 16', 'text-body text-ink-2', 'Usually within 10 minutes between 8 am and 10 pm.'],
+            [
+              'body-lg · 18',
+              'text-body-lg',
+              'Metformin 500 mg · 4 strips · runs out around Fri 13 Nov',
+            ],
+            [
+              'body · 16',
+              'text-body text-ink-2',
+              'Usually within 10 minutes between 8 am and 10 pm.',
+            ],
             ['caption · 14', 'text-caption font-medium text-ink-3', 'DUE SOON'],
           ].map(([name, className, text]) => (
             <div key={name} className="grid gap-1 py-3 sm:grid-cols-[180px_1fr] sm:items-baseline">
@@ -127,7 +142,11 @@ export function DesignPreviewPage() {
             ['staff-title · 22', 'text-staff-title font-semibold', 'Verification queue'],
             ['staff-section · 17', 'text-staff-section font-semibold', 'Prescription details'],
             ['staff-body · 15', 'text-staff-body', 'Telmisartan 40 mg tablet · strip of 10 · ₹285'],
-            ['staff-table · 14', 'text-staff-table tabular-nums', 'RX-50214   Rina Sen · 58   7 min'],
+            [
+              'staff-table · 14',
+              'text-staff-table tabular-nums',
+              'RX-50214   Rina Sen · 58   7 min',
+            ],
             ['staff-caption · 13', 'text-staff-caption font-medium text-ink-2', 'WAITING'],
           ].map(([name, className, text]) => (
             <div key={name} className="grid gap-1 py-3 sm:grid-cols-[180px_1fr] sm:items-baseline">
@@ -178,7 +197,8 @@ export function DesignPreviewPage() {
             <div className="h-full w-1/6 rounded-full bg-pine" />
           </div>
           <p className="mt-2 text-body text-ink-2">
-            <span className="font-semibold text-ink">5 days left</span> · runs out around Fri, 13 Nov
+            <span className="font-semibold text-ink">5 days left</span> · runs out around Fri, 13
+            Nov
           </p>
           <div className="mt-5 flex h-14 w-full items-center justify-center rounded-md bg-pine text-body-lg font-medium text-white">
             Reorder

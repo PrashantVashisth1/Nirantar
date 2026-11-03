@@ -33,7 +33,7 @@ type OrderForSummary = Prisma.OrderGetPayload<{ include: typeof orderSummaryIncl
 
 export function toOrderSummary(order: OrderForSummary): OrderSummaryDto {
   const [first, ...rest] = order.items;
-  const firstText = first ? `${toProductSummary(first.product).displayName} × ${first.quantity}` : 'No items';
+  const firstText = first ? `${toProductSummary(first.product).displayName} × ${first.quantity}` : 'Medicines to be added by the pharmacist';
   return {
     id: order.id,
     number: order.number,
@@ -53,6 +53,7 @@ export const orderDetailInclude = {
   store: { select: { name: true } },
   previewStore: { select: { name: true } },
   verifiedBy: { select: { name: true, pharmacistRegNo: true } },
+  prescription: { select: { file: { select: { prescriptionId: true } } } },
   items: {
     include: { product: true, approvedGeneric: true },
     orderBy: { createdAt: 'asc' },
@@ -71,6 +72,8 @@ export function toOrderDetail(order: OrderForDetail): OrderDetailDto {
       id: item.id,
       product: toProductSummary(item.product),
       quantity: item.quantity,
+      requestedQuantity: item.requestedQuantity,
+      requestedProductId: item.requestedProductId,
       unitPricePaise: item.unitPricePaise,
       status: item.status,
       removedReason: item.removedReason,
@@ -96,5 +99,9 @@ export function toOrderDetail(order: OrderForDetail): OrderDetailDto {
       : null,
     deliveryAddress: order.deliveryAddress,
     previewStoreName: order.previewStore?.name ?? null,
+    prescriptionId: order.prescriptionId,
+    prescriptionHasImage: Boolean(order.prescription?.file),
+    promisedBy: order.promisedBy?.toISOString() ?? null,
+    routingNote: order.status === 'AWAITING_STOCK' ? order.routingNote : null,
   };
 }

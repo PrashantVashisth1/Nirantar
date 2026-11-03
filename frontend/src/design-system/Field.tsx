@@ -1,4 +1,10 @@
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
+import {
+  forwardRef,
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+} from 'react';
 import { AlertCircle, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/cn';
 
@@ -12,7 +18,13 @@ interface FieldShellProps {
 }
 
 /** Label always above the control, hint or error below (never placeholder-only labels). */
-export function FieldShell({ label, hint, error, density = 'customer', children }: FieldShellProps) {
+export function FieldShell({
+  label,
+  hint,
+  error,
+  density = 'customer',
+  children,
+}: FieldShellProps) {
   const inputId = useId();
   const hintId = `${inputId}-hint`;
   const errorId = `${inputId}-error`;
@@ -22,20 +34,32 @@ export function FieldShell({ label, hint, error, density = 'customer', children 
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={inputId}
-        className={cn('font-medium text-ink', density === 'customer' ? 'text-body' : 'text-staff-table')}
+        className={cn(
+          'font-medium text-ink',
+          density === 'customer' ? 'text-body' : 'text-staff-table',
+        )}
       >
         {label}
       </label>
       {children({ inputId, describedBy })}
       {hint && !error && (
-        <p id={hintId} className={cn('text-ink-2', density === 'customer' ? 'text-caption' : 'text-staff-caption')}>
+        <p
+          id={hintId}
+          className={cn(
+            'text-ink-2',
+            density === 'customer' ? 'text-caption' : 'text-staff-caption',
+          )}
+        >
           {hint}
         </p>
       )}
       {error && (
         <p
           id={errorId}
-          className={cn('flex items-start gap-1.5 text-danger', density === 'customer' ? 'text-caption' : 'text-staff-caption')}
+          className={cn(
+            'flex items-start gap-1.5 text-danger',
+            density === 'customer' ? 'text-caption' : 'text-staff-caption',
+          )}
         >
           <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
           {error}
@@ -51,7 +75,9 @@ const controlClasses = (density: 'customer' | 'staff', hasError: boolean) =>
     'transition-[border-color,box-shadow] duration-120 ease-calm',
     'focus:border-pine focus:outline-none focus:ring-3 focus:ring-pine-subtle',
     'disabled:bg-sunken disabled:text-ink-disabled',
-    density === 'customer' ? 'h-[52px] rounded-md px-4 text-body-lg' : 'h-9 rounded-sm px-3 text-staff-body',
+    density === 'customer'
+      ? 'h-[52px] rounded-md px-4 text-body-lg'
+      : 'h-9 rounded-sm px-3 text-staff-body',
     hasError ? 'border-danger' : 'border-line-strong',
   );
 
@@ -86,7 +112,11 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
             id={inputId}
             aria-invalid={error ? true : undefined}
             aria-describedby={describedBy}
-            className={cn(controlClasses(density, Boolean(error)), prefix && (density === 'customer' ? 'pl-14' : 'pl-11'), className)}
+            className={cn(
+              controlClasses(density, Boolean(error)),
+              prefix && (density === 'customer' ? 'pl-14' : 'pl-11'),
+              className,
+            )}
             {...rest}
           />
         </div>
@@ -117,7 +147,11 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(funct
             id={inputId}
             aria-invalid={error ? true : undefined}
             aria-describedby={describedBy}
-            className={cn(controlClasses(density, Boolean(error)), 'appearance-none pr-11', className)}
+            className={cn(
+              controlClasses(density, Boolean(error)),
+              'appearance-none pr-11',
+              className,
+            )}
             {...rest}
           >
             {options.map((option) => (
@@ -126,7 +160,10 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(funct
               </option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-ink-2" aria-hidden />
+          <ChevronDown
+            className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-ink-2"
+            aria-hidden
+          />
         </div>
       )}
     </FieldShell>

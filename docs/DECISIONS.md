@@ -71,4 +71,24 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **CSV upload is sent as JSON text (max 2 MB)** with its own body limit, instead of adding multipart handling just for this.
 
+## Days 4–5 · Fri 6 / Sat 7 Nov 2026 (done early, 4 Nov)
+
+**Prescription photos are re-encoded, then encrypted.** The real file type is read from the bytes (a PDF renamed `.jpg` is refused). sharp fixes rotation, drops all metadata (including GPS) and resizes. AES-256-GCM uses the prescription id as associated data, so an encrypted file can't be moved to another record. Images are served only to the owner or a pharmacist, with `no-store`, and every view is logged.
+
+**The AI only transcribes; our code matches.** Gemini returns a fixed JSON shape (validated with Zod). Catalog matching is deterministic: name similarity plus exact strength, and a different strength is never auto-selected. Dose text ("1-0-1", "BD") is turned into a pre-fill for the pharmacist, never used directly for refills. Without a `GEMINI_API_KEY` every read goes straight to the manual path, which is a complete flow.
+
+**No job queue for AI reads.** The read runs in the background right after upload; a read still "reading" after 2 minutes is marked failed the next time anyone looks at it (one conditional update). Retry AI re-runs it.
+
+**An order can be placed with just a photo.** If the AI can't read it, the customer can still continue; the pharmacist adds the medicines and the customer confirms the changes. Found while testing the sample prescription with the AI switched off.
+
+**The pharmacist's decision is one atomic request.** The workspace keeps edits locally and submits everything at once: per-item approval of the exact product, quantity and prescription, removals with reasons, generic offers, and prescription details. Changes or generic offers go to the customer first; otherwise the order is routed immediately. Simpler and safer than saving each field separately.
+
+**Generic switch = pre-approved option + recorded consent.** Offering a generic approves it; the customer's Keep/Switch choice and time are stored; the database gate accepts the generic only with that consent.
+
+**Version numbers on orders.** Every change checks the version the screen loaded; a stale screen gets 409 and reloads instead of overwriting someone else's decision.
+
+**Handover is the moment of sale.** H1 register rows are written and stock leaves the store (on_hand and reserved both drop) in the same transaction as the status change. UPI orders can't be handed over unpaid. Delivery starts refill tracking from the pharmacist-confirmed dose.
+
+**Tests run against one real listening server per file.** Supertest's per-request servers occasionally closed mid-test.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

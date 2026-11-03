@@ -24,7 +24,9 @@ export function OperationsPage() {
               value={t.value}
               className={cn(
                 '-mb-px h-10 border-b-2 px-3 text-staff-body font-medium transition-colors duration-120',
-                tab === t.value ? 'border-pine text-ink' : 'border-transparent text-ink-2 hover:text-ink',
+                tab === t.value
+                  ? 'border-pine text-ink'
+                  : 'border-transparent text-ink-2 hover:text-ink',
               )}
             >
               {t.label}

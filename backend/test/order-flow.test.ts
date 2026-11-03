@@ -156,6 +156,17 @@ describe('prescription upload and AI draft (T12, T17)', () => {
       items: [{ productId: w.metformin.id, quantity: 4 }], paymentMethod: 'COD', remindersOptIn: false,
     });
     expect(res.status).toBe(201);
+
+    // With no medicines listed at all, the photo alone is enough: the pharmacist adds the items.
+    const photoOnly = await w.customerAgent.post('/api/orders').send({
+      patientId: w.customer.patient.id, addressId: w.address.id, prescriptionId: failed.id,
+      items: [], paymentMethod: 'COD', remindersOptIn: false,
+    });
+    expect(photoOnly.status).toBe(201);
+    const noPhoto = await w.customerAgent.post('/api/orders').send({
+      patientId: w.customer.patient.id, addressId: w.address.id, items: [], paymentMethod: 'COD', remindersOptIn: false,
+    });
+    expect(noPhoto.status).toBe(400);
   });
 
   it('flags uncertain fields and refuses a different strength', async () => {

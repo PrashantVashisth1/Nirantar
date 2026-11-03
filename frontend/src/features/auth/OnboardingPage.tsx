@@ -1,5 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { RELATIONS, type Locale, type MeDto, type PatientDto, type Relation } from '@nirantar/shared';
+import {
+  RELATIONS,
+  type Locale,
+  type MeDto,
+  type PatientDto,
+  type Relation,
+} from '@nirantar/shared';
 import { ShieldCheck } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +45,9 @@ function OnboardingForm({ me }: { me: MeDto }) {
   const [familyName, setFamilyName] = useState('');
   const [familyRelation, setFamilyRelation] = useState<Relation>('PARENT');
   const [familyBirthYear, setFamilyBirthYear] = useState('');
-  const [errors, setErrors] = useState<{ name?: string; consent?: string; familyName?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; consent?: string; familyName?: string }>(
+    {},
+  );
 
   const save = useMutation({
     mutationFn: async () => {
@@ -80,7 +88,10 @@ function OnboardingForm({ me }: { me: MeDto }) {
     if (Object.keys(next).length === 0) save.mutate();
   }
 
-  const relationOptions = RELATIONS.filter((r) => r !== 'SELF').map((r) => ({ value: r, label: t(`relation.${r}`) }));
+  const relationOptions = RELATIONS.filter((r) => r !== 'SELF').map((r) => ({
+    value: r,
+    label: t(`relation.${r}`),
+  }));
   const currentYear = new Date().getFullYear();
 
   return (
@@ -99,7 +110,9 @@ function OnboardingForm({ me }: { me: MeDto }) {
           />
 
           <fieldset>
-            <legend className="mb-2 text-body font-medium text-ink">{t('onboarding.languageLabel')}</legend>
+            <legend className="mb-2 text-body font-medium text-ink">
+              {t('onboarding.languageLabel')}
+            </legend>
             <div className="grid grid-cols-3 gap-2">
               {LANGUAGE_OPTIONS.map((option) => (
                 <div key={option.locale} lang={option.locale}>
@@ -142,10 +155,24 @@ function OnboardingForm({ me }: { me: MeDto }) {
         </section>
 
         <fieldset className="mt-8">
-          <legend className="mb-3 text-heading font-semibold text-ink">{t('onboarding.whoTitle')}</legend>
+          <legend className="mb-3 text-heading font-semibold text-ink">
+            {t('onboarding.whoTitle')}
+          </legend>
           <div className="flex flex-col gap-3">
-            <RadioCard name="orderFor" value="self" checked={orderFor === 'self'} onChange={() => setOrderFor('self')} title={t('onboarding.forMyself')} />
-            <RadioCard name="orderFor" value="family" checked={orderFor === 'family'} onChange={() => setOrderFor('family')} title={t('onboarding.forFamily')} />
+            <RadioCard
+              name="orderFor"
+              value="self"
+              checked={orderFor === 'self'}
+              onChange={() => setOrderFor('self')}
+              title={t('onboarding.forMyself')}
+            />
+            <RadioCard
+              name="orderFor"
+              value="family"
+              checked={orderFor === 'family'}
+              onChange={() => setOrderFor('family')}
+              title={t('onboarding.forFamily')}
+            />
           </div>
           {orderFor === 'family' && (
             <div className="mt-5 flex flex-col gap-5 border-l-2 border-pine-line pl-4">
@@ -168,13 +195,17 @@ function OnboardingForm({ me }: { me: MeDto }) {
                 maxLength={4}
                 placeholder={String(currentYear - 70)}
                 value={familyBirthYear}
-                onChange={(event) => setFamilyBirthYear(event.target.value.replace(/\D/g, '').slice(0, 4))}
+                onChange={(event) =>
+                  setFamilyBirthYear(event.target.value.replace(/\D/g, '').slice(0, 4))
+                }
               />
             </div>
           )}
         </fieldset>
 
-        {save.error && <Banner tone="danger" className="mt-6" title={errorMessage(save.error, t)} />}
+        {save.error && (
+          <Banner tone="danger" className="mt-6" title={errorMessage(save.error, t)} />
+        )}
 
         <Button type="submit" size="xl" fullWidth className="mt-8" loading={save.isPending}>
           {save.isPending ? t('onboarding.saving') : t('onboarding.finish')}

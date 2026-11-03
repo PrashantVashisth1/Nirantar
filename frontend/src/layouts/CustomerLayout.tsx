@@ -23,11 +23,15 @@ export function CustomerLayout({ children }: { children: ReactNode }) {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
 
-  const currentLanguage = LANGUAGE_OPTIONS.find((option) => option.locale === i18n.language) ?? LANGUAGE_OPTIONS[0]!;
+  const currentLanguage =
+    LANGUAGE_OPTIONS.find((option) => option.locale === i18n.language) ?? LANGUAGE_OPTIONS[0]!;
 
   return (
     <div className="min-h-dvh bg-canvas">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded-sm focus:bg-surface focus:px-3 focus:py-2">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded-sm focus:bg-surface focus:px-3 focus:py-2"
+      >
         Skip to content
       </a>
       <header className="border-b border-line bg-canvas">
@@ -74,7 +78,9 @@ export function CustomerLayout({ children }: { children: ReactNode }) {
         <Sheet open={accountOpen} onOpenChange={setAccountOpen} title={t('account.title')}>
           <p className="text-body-lg font-medium text-ink">{me.name}</p>
           {me.phoneMasked && (
-            <p className="mt-1 text-body text-ink-2">{t('account.signedInAs', { phone: me.phoneMasked })}</p>
+            <p className="mt-1 text-body text-ink-2">
+              {t('account.signedInAs', { phone: me.phoneMasked })}
+            </p>
           )}
           <Button
             variant="secondary"

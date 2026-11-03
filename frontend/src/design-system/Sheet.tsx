@@ -39,9 +39,13 @@ export function Sheet({
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line sm:hidden" aria-hidden />
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <Dialog.Title className="font-serif text-heading font-semibold text-ink">{title}</Dialog.Title>
+              <Dialog.Title className="font-serif text-heading font-semibold text-ink">
+                {title}
+              </Dialog.Title>
               {description && (
-                <Dialog.Description className="mt-1 text-body text-ink-2">{description}</Dialog.Description>
+                <Dialog.Description className="mt-1 text-body text-ink-2">
+                  {description}
+                </Dialog.Description>
               )}
             </div>
             <Dialog.Close

@@ -13,7 +13,8 @@ const VARIANTS: Record<Variant, string> = {
   secondary:
     'border border-line-strong bg-surface text-ink hover:bg-sunken active:bg-line disabled:text-ink-disabled',
   quiet: 'text-pine hover:bg-sunken active:bg-line disabled:text-ink-disabled',
-  danger: 'border border-danger/40 bg-surface text-danger hover:bg-danger-bg disabled:text-ink-disabled',
+  danger:
+    'border border-danger/40 bg-surface text-danger hover:bg-danger-bg disabled:text-ink-disabled',
 };
 
 const SIZES: Record<Size, string> = {
@@ -45,7 +46,18 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'lg', fullWidth, loading, icon, disabled, className, children, type = 'button', ...rest },
+  {
+    variant = 'primary',
+    size = 'lg',
+    fullWidth,
+    loading,
+    icon,
+    disabled,
+    className,
+    children,
+    type = 'button',
+    ...rest
+  },
   ref,
 ) {
   return (
@@ -57,7 +69,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={buttonClasses(variant, size, fullWidth, className)}
       {...rest}
     >
-      {loading ? <Spinner className={size === 'sm' || size === 'md' ? 'size-4' : 'size-5'} /> : icon}
+      {loading ? (
+        <Spinner className={size === 'sm' || size === 'md' ? 'size-4' : 'size-5'} />
+      ) : (
+        icon
+      )}
       {children}
     </button>
   );
@@ -71,9 +87,20 @@ export interface ButtonLinkProps extends LinkProps {
 }
 
 /** Navigation that looks like a button. It's a real link, so it's never nested inside a <button>. */
-export function ButtonLink({ variant = 'primary', size = 'lg', fullWidth, icon, className, children, ...rest }: ButtonLinkProps) {
+export function ButtonLink({
+  variant = 'primary',
+  size = 'lg',
+  fullWidth,
+  icon,
+  className,
+  children,
+  ...rest
+}: ButtonLinkProps) {
   return (
-    <Link className={buttonClasses(variant, size, fullWidth, className as string | undefined)} {...rest}>
+    <Link
+      className={buttonClasses(variant, size, fullWidth, className as string | undefined)}
+      {...rest}
+    >
       {icon}
       {children}
     </Link>

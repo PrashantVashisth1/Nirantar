@@ -21,7 +21,9 @@ export function RefillCard({ refills }: { refills: RefillDto[] }) {
   return (
     <article className="rounded-md bg-surface p-5 shadow-raised">
       <p className="text-caption font-medium uppercase tracking-wide text-ink-3">
-        {patient.relation === 'SELF' ? t('home.forYou') : t('home.forPatient', { name: patient.fullName })}
+        {patient.relation === 'SELF'
+          ? t('home.forYou')
+          : t('home.forPatient', { name: patient.fullName })}
       </p>
 
       <ul className="mt-3 flex flex-col gap-4">
@@ -42,7 +44,12 @@ export function RefillCard({ refills }: { refills: RefillDto[] }) {
         ) : prescriptionExpired ? (
           <>
             <p className="mb-3 text-body text-ink-2">{t('home.prescriptionExpired')}</p>
-            <ButtonLink to={`/order/new?patient=${patient.id}`} variant="secondary" size="xl" fullWidth>
+            <ButtonLink
+              to={`/order/new?patient=${patient.id}`}
+              variant="secondary"
+              size="xl"
+              fullWidth
+            >
               {t('home.uploadNewToReorder')}
             </ButtonLink>
           </>

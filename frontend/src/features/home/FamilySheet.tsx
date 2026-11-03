@@ -73,13 +73,21 @@ export function FamilySheet({
               title={patient.fullName}
               description={[
                 t(`relation.${patient.relation}`),
-                patient.birthYear ? t('family.age', { age: currentYear - patient.birthYear }) : null,
+                patient.birthYear
+                  ? t('family.age', { age: currentYear - patient.birthYear })
+                  : null,
               ]
                 .filter(Boolean)
                 .join(' · ')}
             />
           ))}
-          <Button variant="secondary" fullWidth className="mt-2" icon={<Plus className="size-5" aria-hidden />} onClick={() => setAdding(true)}>
+          <Button
+            variant="secondary"
+            fullWidth
+            className="mt-2"
+            icon={<Plus className="size-5" aria-hidden />}
+            onClick={() => setAdding(true)}
+          >
             {t('family.add')}
           </Button>
         </div>
@@ -121,12 +129,21 @@ function AddPatientForm({ onDone }: { onDone: (patient: PatientDto) => void }) {
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
-      <TextField label={t('family.nameLabel')} value={fullName} onChange={(e) => setFullName(e.target.value)} error={nameError} autoFocus />
+      <TextField
+        label={t('family.nameLabel')}
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
+        error={nameError}
+        autoFocus
+      />
       <SelectField
         label={t('family.relationLabel')}
         value={relation}
         onChange={(e) => setRelation(e.target.value as Relation)}
-        options={RELATIONS.filter((r) => r !== 'SELF').map((r) => ({ value: r, label: t(`relation.${r}`) }))}
+        options={RELATIONS.filter((r) => r !== 'SELF').map((r) => ({
+          value: r,
+          label: t(`relation.${r}`),
+        }))}
       />
       <TextField
         label={t('family.birthYearLabel')}

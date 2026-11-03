@@ -27,9 +27,15 @@ export function firstName(fullName: string): string {
 }
 
 /** Greeting by the time of day in India. */
-export function greetingKey(now = new Date()): 'greetingMorning' | 'greetingAfternoon' | 'greetingEvening' {
+export function greetingKey(
+  now = new Date(),
+): 'greetingMorning' | 'greetingAfternoon' | 'greetingEvening' {
   const hour = Number(
-    new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kolkata' }).format(now),
+    new Intl.DateTimeFormat('en-GB', {
+      hour: 'numeric',
+      hour12: false,
+      timeZone: 'Asia/Kolkata',
+    }).format(now),
   );
   if (hour < 12) return 'greetingMorning';
   if (hour < 17) return 'greetingAfternoon';

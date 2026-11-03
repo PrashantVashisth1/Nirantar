@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { REFILL_DUE_SOON_DAYS, type HomeDto, type OrderSummaryDto, type RefillDto } from '@nirantar/shared';
+import {
+  REFILL_DUE_SOON_DAYS,
+  type HomeDto,
+  type OrderSummaryDto,
+  type RefillDto,
+} from '@nirantar/shared';
 import { Camera, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -65,7 +70,8 @@ export function HomePage() {
     const later = refills.filter((r) => r.daysLeft > REFILL_DUE_SOON_DAYS);
     // One card per patient, so "Reorder" covers everything that person needs soon.
     const groups = new Map<string, RefillDto[]>();
-    for (const refill of dueSoon) groups.set(refill.patient.id, [...(groups.get(refill.patient.id) ?? []), refill]);
+    for (const refill of dueSoon)
+      groups.set(refill.patient.id, [...(groups.get(refill.patient.id) ?? []), refill]);
     return {
       cards: [...groups.values()],
       later,
@@ -78,7 +84,11 @@ export function HomePage() {
 
   const selectedPatient = data?.patients.find((p) => p.id === activePatientId);
   const isEmpty =
-    view && view.cards.length === 0 && view.later.length === 0 && view.activeOrders.length === 0 && view.pastOrders.length === 0;
+    view &&
+    view.cards.length === 0 &&
+    view.later.length === 0 &&
+    view.activeOrders.length === 0 &&
+    view.pastOrders.length === 0;
 
   return (
     <CustomerLayout>
@@ -95,7 +105,9 @@ export function HomePage() {
           className="mt-3 flex h-11 items-center gap-1.5 rounded-full border border-line-strong bg-surface pl-4 pr-3 text-body text-ink hover:bg-sunken"
         >
           <span className="text-ink-2">{t('home.orderingFor')}:</span>
-          <span className="font-medium">{selectedPatient ? selectedPatient.fullName : t('home.everyone')}</span>
+          <span className="font-medium">
+            {selectedPatient ? selectedPatient.fullName : t('home.everyone')}
+          </span>
           <ChevronDown className="size-4 text-ink-2" aria-hidden />
         </button>
       )}
@@ -111,7 +123,10 @@ export function HomePage() {
         )}
 
         {home.isError && !data && (
-          <ErrorState message={`${t('home.loadError')} ${errorMessage(home.error, t)}`} onRetry={() => void home.refetch()} />
+          <ErrorState
+            message={`${t('home.loadError')} ${errorMessage(home.error, t)}`}
+            onRetry={() => void home.refetch()}
+          />
         )}
 
         {isEmpty && (
@@ -132,11 +147,19 @@ export function HomePage() {
             }
             action={
               <div className="flex flex-col gap-3">
-                <ButtonLink to="/order/new" size="xl" fullWidth icon={<Camera className="size-5" aria-hidden />}>
+                <ButtonLink
+                  to="/order/new"
+                  size="xl"
+                  fullWidth
+                  icon={<Camera className="size-5" aria-hidden />}
+                >
                   {t('home.uploadPrescription')}
                 </ButtonLink>
                 {config?.testMode && (
-                  <Link to="/order/new?sample=1" className="py-2 text-body font-medium text-pine hover:underline">
+                  <Link
+                    to="/order/new?sample=1"
+                    className="py-2 text-body font-medium text-pine hover:underline"
+                  >
                     {t('home.trySample')}
                   </Link>
                 )}
@@ -149,7 +172,10 @@ export function HomePage() {
           <div className="flex flex-col gap-10">
             {view.cards.length > 0 && (
               <section aria-labelledby="due-soon">
-                <h2 id="due-soon" className="mb-3 text-caption font-medium uppercase tracking-wide text-ink-3">
+                <h2
+                  id="due-soon"
+                  className="mb-3 text-caption font-medium uppercase tracking-wide text-ink-3"
+                >
                   {t('home.dueSoon')}
                 </h2>
                 <div className="flex flex-col gap-4">
@@ -162,7 +188,10 @@ export function HomePage() {
 
             {view.later.length > 0 && (
               <section aria-labelledby="later">
-                <h2 id="later" className="mb-1 text-caption font-medium uppercase tracking-wide text-ink-3">
+                <h2
+                  id="later"
+                  className="mb-1 text-caption font-medium uppercase tracking-wide text-ink-3"
+                >
                   {t('home.later')}
                 </h2>
                 <ul className="divide-y divide-line border-y border-line">
@@ -171,7 +200,9 @@ export function HomePage() {
                       <span>
                         <span className="text-body-lg text-ink">{refill.product.displayName}</span>
                         <span className="block text-caption text-ink-2">
-                          {refill.patient.relation === 'SELF' ? t('home.forYou') : t('home.forPatient', { name: refill.patient.fullName })}
+                          {refill.patient.relation === 'SELF'
+                            ? t('home.forYou')
+                            : t('home.forPatient', { name: refill.patient.fullName })}
                         </span>
                       </span>
                       <span className="shrink-0 text-body text-ink-2">
@@ -188,10 +219,22 @@ export function HomePage() {
             )}
 
             <div className="flex flex-col gap-3">
-              <ButtonLink to="/order/new" variant="secondary" size="lg" fullWidth icon={<Camera className="size-5" aria-hidden />}>
+              <ButtonLink
+                to="/order/new"
+                variant="secondary"
+                size="lg"
+                fullWidth
+                icon={<Camera className="size-5" aria-hidden />}
+              >
                 {t('home.uploadPrescription')}
               </ButtonLink>
-              <ButtonLink to="/order/new?search=1" variant="secondary" size="lg" fullWidth icon={<Search className="size-5" aria-hidden />}>
+              <ButtonLink
+                to="/order/new?search=1"
+                variant="secondary"
+                size="lg"
+                fullWidth
+                icon={<Search className="size-5" aria-hidden />}
+              >
                 {t('home.searchMedicines')}
               </ButtonLink>
             </div>
@@ -218,7 +261,15 @@ export function HomePage() {
   );
 }
 
-function OrderList({ id, title, orders }: { id: string; title: string; orders: OrderSummaryDto[] }) {
+function OrderList({
+  id,
+  title,
+  orders,
+}: {
+  id: string;
+  title: string;
+  orders: OrderSummaryDto[];
+}) {
   const { t } = useTranslation();
   return (
     <section aria-labelledby={id}>
@@ -228,13 +279,18 @@ function OrderList({ id, title, orders }: { id: string; title: string; orders: O
       <ul className="divide-y divide-line border-y border-line">
         {orders.map((order) => (
           <li key={order.id}>
-            <Link to={`/orders/${order.id}`} className="flex items-center gap-3 py-3.5 hover:bg-sunken/60">
+            <Link
+              to={`/orders/${order.id}`}
+              className="flex items-center gap-3 py-3.5 hover:bg-sunken/60"
+            >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="font-mono text-caption text-ink-2">{order.number}</span>
                   <span className="text-caption text-ink-3">·</span>
                   <span className="text-caption text-ink-2">
-                    {order.patient.relation === 'SELF' ? t('home.forYou') : firstName(order.patient.fullName)}
+                    {order.patient.relation === 'SELF'
+                      ? t('home.forYou')
+                      : firstName(order.patient.fullName)}
                   </span>
                 </div>
                 <p className="mt-0.5 truncate text-body-lg text-ink">{order.itemsSummary}</p>

@@ -31,7 +31,15 @@ export const CUSTOMER_STATUS_TONE: Record<OrderStatus, Tone> = {
   CANCELLED: 'neutral',
 };
 
-export function Pill({ tone, children, size = 'customer' }: { tone: Tone; children: React.ReactNode; size?: 'customer' | 'staff' }) {
+export function Pill({
+  tone,
+  children,
+  size = 'customer',
+}: {
+  tone: Tone;
+  children: React.ReactNode;
+  size?: 'customer' | 'staff';
+}) {
   return (
     <span
       className={cn(

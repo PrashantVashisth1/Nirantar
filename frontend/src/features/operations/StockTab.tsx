@@ -25,7 +25,13 @@ interface ImportDto {
     validCount: number;
     errorCount: number;
     errors: { row: number; column: string; value: string; message: string }[];
-    stores: { code: string; name: string; skus: number; setToZero: number; belowReserved: number }[];
+    stores: {
+      code: string;
+      name: string;
+      skus: number;
+      setToZero: number;
+      belowReserved: number;
+    }[];
   };
 }
 
@@ -56,7 +62,8 @@ export function StockTab() {
   };
 
   const upload = useMutation({
-    mutationFn: (file: { fileName: string; content: string }) => api.post<ImportDto>('/ops/stock-imports', file),
+    mutationFn: (file: { fileName: string; content: string }) =>
+      api.post<ImportDto>('/ops/stock-imports', file),
     onSuccess: (result) => {
       setPreview(result);
       setApplied(undefined);
@@ -64,7 +71,8 @@ export function StockTab() {
     },
   });
   const apply = useMutation({
-    mutationFn: (id: string) => api.post<{ routedOrders: number }>(`/ops/stock-imports/${id}/apply`),
+    mutationFn: (id: string) =>
+      api.post<{ routedOrders: number }>(`/ops/stock-imports/${id}/apply`),
     onSuccess: (result) => {
       setPreview(null);
       setApplied(
@@ -99,8 +107,9 @@ export function StockTab() {
           <div>
             <h2 className="text-staff-section font-semibold text-ink">Daily stock count</h2>
             <p className="mt-1 max-w-2xl text-staff-body text-ink-2">
-              Upload this morning's shelf count as CSV (<span className="font-mono">store_code,sku,on_hand</span>). You'll
-              see a preview first; nothing changes until you apply it, and a file with any error can't be applied.
+              Upload this morning's shelf count as CSV (
+              <span className="font-mono">store_code,sku,on_hand</span>). You'll see a preview
+              first; nothing changes until you apply it, and a file with any error can't be applied.
             </p>
           </div>
           <div className="flex gap-2">
@@ -118,7 +127,12 @@ export function StockTab() {
               id="stock-file"
               onChange={(e) => void onFile(e.target.files?.[0])}
             />
-            <Button size="md" icon={<Upload className="size-4" aria-hidden />} loading={upload.isPending} onClick={() => fileInput.current?.click()}>
+            <Button
+              size="md"
+              icon={<Upload className="size-4" aria-hidden />}
+              loading={upload.isPending}
+              onClick={() => fileInput.current?.click()}
+            >
               Upload stock CSV
             </Button>
           </div>
@@ -169,7 +183,9 @@ function ImportPreview({
       <div className="flex flex-wrap items-center gap-3">
         <h3 className="text-staff-section font-semibold text-ink">Preview: {preview.fileName}</h3>
         <Pill tone={hasErrors ? 'danger' : 'success'} size="staff">
-          {hasErrors ? `${summary.errorCount} error${summary.errorCount === 1 ? '' : 's'}` : 'Ready to apply'}
+          {hasErrors
+            ? `${summary.errorCount} error${summary.errorCount === 1 ? '' : 's'}`
+            : 'Ready to apply'}
         </Pill>
       </div>
       <p className="mt-1 text-staff-body text-ink-2 tabular-nums">
@@ -195,7 +211,15 @@ function ImportPreview({
                   </td>
                   <td className={`${tc.td} text-right tabular-nums`}>{s.skus}</td>
                   <td className={`${tc.td} text-right tabular-nums`}>{s.setToZero}</td>
-                  <td className={cn(tc.td, 'text-right tabular-nums', s.belowReserved > 0 && 'font-semibold text-warning')}>{s.belowReserved}</td>
+                  <td
+                    className={cn(
+                      tc.td,
+                      'text-right tabular-nums',
+                      s.belowReserved > 0 && 'font-semibold text-warning',
+                    )}
+                  >
+                    {s.belowReserved}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -232,7 +256,11 @@ function ImportPreview({
       )}
 
       <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
-        {hasErrors && <p className="mr-auto text-staff-table text-ink-2">Fix these rows and upload the file again. Nothing has been changed.</p>}
+        {hasErrors && (
+          <p className="mr-auto text-staff-table text-ink-2">
+            Fix these rows and upload the file again. Nothing has been changed.
+          </p>
+        )}
         <Button variant="secondary" size="md" loading={discarding} onClick={onDiscard}>
           Discard
         </Button>
@@ -248,7 +276,8 @@ function WaitingOrders() {
   const queryClient = useQueryClient();
   const waiting = useQuery({
     queryKey: ['ops', 'awaiting-stock'],
-    queryFn: () => api.get<(OrderSummaryDto & { routingNote: string | null })[]>('/ops/awaiting-stock'),
+    queryFn: () =>
+      api.get<(OrderSummaryDto & { routingNote: string | null })[]>('/ops/awaiting-stock'),
   });
   const retry = useMutation({
     mutationFn: (id: string) => api.post<{ outcome: string }>(`/ops/orders/${id}/retry-routing`),
@@ -258,15 +287,27 @@ function WaitingOrders() {
   if (!waiting.data || waiting.data.length === 0) return null;
   return (
     <section>
-      <h2 className="text-staff-section font-semibold text-ink">Waiting for stock ({waiting.data.length})</h2>
-      <p className="mt-1 text-staff-body text-ink-2">Approved orders no store within range can fill yet. They're retried after every import.</p>
+      <h2 className="text-staff-section font-semibold text-ink">
+        Waiting for stock ({waiting.data.length})
+      </h2>
+      <p className="mt-1 text-staff-body text-ink-2">
+        Approved orders no store within range can fill yet. They're retried after every import.
+      </p>
       <ul className="mt-3 divide-y divide-line border-y border-line bg-surface">
         {waiting.data.map((order) => (
-          <li key={order.id} className="flex flex-wrap items-center gap-3 px-4 py-3 text-staff-table">
+          <li
+            key={order.id}
+            className="flex flex-wrap items-center gap-3 px-4 py-3 text-staff-table"
+          >
             <span className="font-mono">{order.number}</span>
             <span className="text-ink">{order.itemsSummary}</span>
             <span className="w-full text-ink-2 sm:w-auto sm:flex-1">{order.routingNote}</span>
-            <Button variant="secondary" size="sm" loading={retry.isPending && retry.variables === order.id} onClick={() => retry.mutate(order.id)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={retry.isPending && retry.variables === order.id}
+              onClick={() => retry.mutate(order.id)}
+            >
               Retry routing
             </Button>
           </li>
@@ -285,14 +326,18 @@ function CurrentStock() {
   });
   const stock = useQuery({
     queryKey: ['ops', 'stock', storeId, query],
-    queryFn: () => api.get<StockRow[]>(`/ops/stock?${new URLSearchParams({ ...(storeId ? { storeId } : {}), ...(query ? { q: query } : {}) })}`),
+    queryFn: () =>
+      api.get<StockRow[]>(
+        `/ops/stock?${new URLSearchParams({ ...(storeId ? { storeId } : {}), ...(query ? { q: query } : {}) })}`,
+      ),
   });
 
   return (
     <section>
       <h2 className="text-staff-section font-semibold text-ink">Current stock</h2>
       <p className="mt-1 text-staff-body text-ink-2">
-        Available = on hand − reserved for routed orders. Prototype data: 6 synthetic stores (the chain has 46).
+        Available = on hand − reserved for routed orders. Prototype data: 6 synthetic stores (the
+        chain has 46).
       </p>
       <div className="mt-3 flex flex-wrap gap-3">
         <select
@@ -322,7 +367,11 @@ function CurrentStock() {
           <ErrorState message={errorMessage(stock.error, t)} onRetry={() => void stock.refetch()} />
         </div>
       )}
-      {stock.data && stock.data.length === 0 && <p className="mt-4 text-staff-body text-ink-2">No stock rows match. Upload today's CSV to start routing.</p>}
+      {stock.data && stock.data.length === 0 && (
+        <p className="mt-4 text-staff-body text-ink-2">
+          No stock rows match. Upload today's CSV to start routing.
+        </p>
+      )}
       {stock.data && stock.data.length > 0 && (
         <div className={`mt-3 max-h-[480px] overflow-y-auto ${tc.wrap}`}>
           <table className={tc.table}>
@@ -338,7 +387,8 @@ function CurrentStock() {
             </thead>
             <tbody>
               {stock.data.map((row) => {
-                const stale = !row.countedAt || Date.now() - new Date(row.countedAt).getTime() > 48 * 3600_000;
+                const stale =
+                  !row.countedAt || Date.now() - new Date(row.countedAt).getTime() > 48 * 3600_000;
                 return (
                   <tr key={`${row.storeCode}:${row.sku}`} className={tc.row}>
                     <td className={`${tc.td} font-mono text-ink-2`}>{row.storeCode}</td>
@@ -347,7 +397,15 @@ function CurrentStock() {
                     </td>
                     <td className={`${tc.td} text-right tabular-nums`}>{row.onHand}</td>
                     <td className={`${tc.td} text-right tabular-nums`}>{row.reserved}</td>
-                    <td className={cn(tc.td, 'text-right font-semibold tabular-nums', row.available <= 0 ? 'text-danger' : 'text-ink')}>{row.available}</td>
+                    <td
+                      className={cn(
+                        tc.td,
+                        'text-right font-semibold tabular-nums',
+                        row.available <= 0 ? 'text-danger' : 'text-ink',
+                      )}
+                    >
+                      {row.available}
+                    </td>
                     <td className={cn(tc.td, stale ? 'text-warning' : 'text-ink-2')}>
                       {row.countedAt ? formatDateTime(row.countedAt, 'en') : 'Never'}
                       {stale && ' · stale, not used for routing'}
@@ -364,7 +422,10 @@ function CurrentStock() {
 }
 
 function ImportHistory() {
-  const history = useQuery({ queryKey: ['ops', 'imports'], queryFn: () => api.get<ImportDto[]>('/ops/stock-imports') });
+  const history = useQuery({
+    queryKey: ['ops', 'imports'],
+    queryFn: () => api.get<ImportDto[]>('/ops/stock-imports'),
+  });
   if (!history.data || history.data.length === 0) return null;
   return (
     <section>
@@ -387,8 +448,25 @@ function ImportHistory() {
                 <td className={`${tc.td} font-mono`}>{item.fileName}</td>
                 <td className={`${tc.td} text-right tabular-nums`}>{item.summary.rowCount}</td>
                 <td className={tc.td}>
-                  <Pill tone={item.status === 'APPLIED' ? 'success' : item.status === 'DISCARDED' ? 'neutral' : item.errorCount > 0 ? 'danger' : 'info'} size="staff">
-                    {item.status === 'PREVIEW' ? (item.errorCount > 0 ? `${item.errorCount} errors` : 'Not applied') : item.status === 'APPLIED' ? 'Applied' : 'Discarded'}
+                  <Pill
+                    tone={
+                      item.status === 'APPLIED'
+                        ? 'success'
+                        : item.status === 'DISCARDED'
+                          ? 'neutral'
+                          : item.errorCount > 0
+                            ? 'danger'
+                            : 'info'
+                    }
+                    size="staff"
+                  >
+                    {item.status === 'PREVIEW'
+                      ? item.errorCount > 0
+                        ? `${item.errorCount} errors`
+                        : 'Not applied'
+                      : item.status === 'APPLIED'
+                        ? 'Applied'
+                        : 'Discarded'}
                   </Pill>
                 </td>
                 <td className={`${tc.td} text-ink-2`}>{item.uploadedBy}</td>

@@ -1,6 +1,6 @@
 import { LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { NavLink, useNavigate } from 'react-router';
 import { Button } from '../design-system/Button';
 import { useAppConfig } from '../lib/config';
 import { useMe, useSignOut } from '../lib/session';
@@ -21,7 +21,28 @@ export function StaffLayout({ children }: { children: ReactNode }) {
             {me?.role === 'PHARMACIST' ? 'Pharmacist' : 'Central operations'}
           </span>
           {config?.testMode && (
-            <span className="rounded-full bg-warning-bg px-2 py-0.5 text-staff-caption font-medium text-warning">Test mode</span>
+            <span className="rounded-full bg-warning-bg px-2 py-0.5 text-staff-caption font-medium text-warning">
+              Test mode
+            </span>
+          )}
+          {me?.role === 'PHARMACIST' && (
+            <nav aria-label="Pharmacist" className="ml-2 flex gap-1">
+              {[
+                { to: '/pharmacist', label: 'Queue', end: true },
+                { to: '/pharmacist/store', label: 'Store orders', end: false },
+              ].map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) =>
+                    `flex h-9 items-center rounded-sm px-3 text-staff-body font-medium ${isActive ? 'bg-pine-subtle text-pine' : 'text-ink-2 hover:bg-sunken'}`
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
           )}
           <div className="ml-auto flex items-center gap-3">
             {me && (
@@ -36,7 +57,11 @@ export function StaffLayout({ children }: { children: ReactNode }) {
               size="sm"
               icon={<LogOut className="size-4" aria-hidden />}
               loading={signOut.isPending}
-              onClick={() => signOut.mutate(undefined, { onSuccess: () => navigate('/signin', { replace: true }) })}
+              onClick={() =>
+                signOut.mutate(undefined, {
+                  onSuccess: () => navigate('/signin', { replace: true }),
+                })
+              }
             >
               Sign out
             </Button>

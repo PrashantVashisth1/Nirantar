@@ -1,0 +1,22 @@
+# Local PostgreSQL for development and tests.
+# Port 5433 on the host avoids clashing with any Postgres already installed on 5432.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nirantar-db
+    environment:
+      POSTGRES_USER: nirantar
+      POSTGRES_PASSWORD: nirantar_local_only
+      POSTGRES_DB: nirantar
+    ports:
+      - '5433:5432'
+    volumes:
+      - nirantar-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nirantar -d nirantar']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  nirantar-db-data:

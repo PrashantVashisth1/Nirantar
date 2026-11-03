@@ -1,0 +1,132 @@
+@import 'tailwindcss';
+
+/*
+ * Nirantar design tokens (plan §3.1): "a trusted pharmacy slip".
+ * Warm paper, dark ink, one deep green. Tailwind's default colour palette is
+ * switched off on purpose, so only these colours can be used anywhere.
+ */
+@theme {
+  --color-*: initial;
+  --color-white: #ffffff;
+
+  /* Neutrals: paper and ink */
+  --color-canvas: #f7f6f2;
+  --color-surface: #ffffff;
+  --color-sunken: #f0eee8;
+  --color-line: #e3e0d7;
+  --color-line-strong: #cbc7ba;
+  --color-ink: #1a2421;
+  --color-ink-2: #4d5954;
+  --color-ink-3: #6b7570;
+  --color-ink-disabled: #8e9691;
+  --color-disabled: #e9e7e0;
+
+  /* Brand: pine */
+  --color-pine: #0f5c4a;
+  --color-pine-hover: #0b4c3d;
+  --color-pine-pressed: #083b30;
+  --color-pine-subtle: #e6f0eb;
+  --color-pine-line: #c3d9ce;
+
+  /* Semantic (text colour / background). Red only for blocked or failed. */
+  --color-success: #17694a;
+  --color-success-bg: #e5f2eb;
+  --color-warning: #8a5a00;
+  --color-warning-bg: #fcf3dc;
+  --color-danger: #a3261b;
+  --color-danger-bg: #fbecea;
+  --color-info: #2f5482;
+  --color-info-bg: #eaf0f8;
+
+  /* Type: Noto families harmonise across Latin, Devanagari and Bengali. */
+  --font-sans:
+    'Noto Sans Variable', 'Noto Sans Devanagari Variable', 'Noto Sans Bengali Variable', system-ui,
+    sans-serif;
+  --font-serif:
+    'Source Serif 4 Variable', 'Noto Serif Devanagari Variable', 'Noto Serif Bengali Variable',
+    Georgia, serif;
+  --font-mono: 'Noto Sans Mono Variable', ui-monospace, monospace;
+
+  /* Customer type scale (base 18px). Hindi/Bengali add extra leading via --indic-leading. */
+  --text-display: 1.875rem;
+  --text-display--line-height: calc(2.375rem + var(--indic-leading));
+  --text-title: 1.625rem;
+  --text-title--line-height: calc(2.125rem + var(--indic-leading));
+  --text-heading: 1.3125rem;
+  --text-heading--line-height: calc(1.75rem + var(--indic-leading));
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: calc(1.75rem + var(--indic-leading));
+  --text-body: 1rem;
+  --text-body--line-height: calc(1.5rem + var(--indic-leading));
+  --text-caption: 0.875rem;
+  --text-caption--line-height: calc(1.25rem + var(--indic-leading));
+
+  /* Staff type scale (base 15px): denser, for the pharmacist workbench. */
+  --text-staff-title: 1.375rem;
+  --text-staff-title--line-height: 1.75rem;
+  --text-staff-section: 1.0625rem;
+  --text-staff-section--line-height: 1.5rem;
+  --text-staff-body: 0.9375rem;
+  --text-staff-body--line-height: 1.375rem;
+  --text-staff-table: 0.875rem;
+  --text-staff-table--line-height: 1.25rem;
+  --text-staff-caption: 0.8125rem;
+  --text-staff-caption--line-height: 1.125rem;
+
+  /* Radius: badges · staff controls · customer controls/panels · sheet tops */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Depth: one raised surface per screen; overlays for sheets and dialogs. */
+  --shadow-raised: 0 1px 2px rgb(26 36 33 / 0.05), 0 2px 8px rgb(26 36 33 / 0.05);
+  --shadow-overlay: 0 8px 24px rgb(26 36 33 / 0.12), 0 2px 6px rgb(26 36 33 / 0.06);
+
+  --ease-calm: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+  :root {
+    --indic-leading: 0px;
+    color-scheme: light;
+  }
+
+  /* Devanagari and Bengali need more vertical room for matras and conjuncts. */
+  :root:lang(hi),
+  :root:lang(bn) {
+    --indic-leading: 0.25rem;
+  }
+
+  html {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-pine);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-pine-subtle);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

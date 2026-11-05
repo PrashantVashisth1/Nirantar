@@ -29,7 +29,7 @@ export function TestInboxSheet({ open, onOpenChange }: { open: boolean; onOpenCh
           <Spinner />
         </div>
       )}
-      {isError && <Banner tone="danger">{t('common.genericError')}</Banner>}
+      {isError && <Banner tone="danger" title={t('common.genericError')} />}
       {data?.length === 0 && (
         <div className="py-8 text-center text-body text-ink-2">
           <MessageSquare className="mx-auto mb-2 size-6" aria-hidden />

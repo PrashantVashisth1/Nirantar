@@ -49,3 +49,56 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  e2e:
+    name: End-to-end journeys
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: nirantar
+          POSTGRES_PASSWORD: nirantar_ci_only
+          POSTGRES_DB: nirantar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nirantar -d nirantar"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    # Throwaway values for this job only; none of them protect anything real.
+    env:
+      DATABASE_URL: postgresql://nirantar:nirantar_ci_only@localhost:5432/nirantar
+      APP_ENV: test
+      NODE_ENV: development
+      APP_ORIGIN: http://localhost:5173
+      SESSION_SECRET: ci-only-session-secret-not-used-anywhere-else
+      OTP_PEPPER: ci-only-otp-pepper-not-used-anywhere-else-at-all
+      PRESCRIPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate -w backend
+      - name: Apply database migrations
+        run: npm run db:deploy -w backend
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+      # The app's scripts read backend/.env; here the values come from the job's env.
+      - run: touch backend/.env
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-results
+          path: e2e/.results

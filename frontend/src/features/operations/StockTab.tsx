@@ -272,7 +272,7 @@ function ImportPreview({
   );
 }
 
-function WaitingOrders() {
+export function WaitingOrders() {
   const queryClient = useQueryClient();
   const waiting = useQuery({
     queryKey: ['ops', 'awaiting-stock'],

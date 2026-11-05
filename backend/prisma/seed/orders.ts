@@ -387,7 +387,7 @@ export const BACKGROUND_ORDERS: SeedOrder[] = [
   // ── Rejected and cancelled ──
   { number: 'RX-50170', account: 'tapas', patient: 'tapas-self', previewStore: 'GRH', status: 'REJECTED', placedMinutesAgo: 5 * DAY, verifyMinutes: 6, pharmacist: 'ananya', rx: RX.nirmal, items: [{ sku: 'CLO75-S10', qty: 3 }], rejection: { reason: 'PATIENT_MISMATCH', note: 'The prescription is in another patient’s name.' } },
   { number: 'RX-50171', account: 'sharmila', patient: 'sharmila-self', previewStore: 'BHL', status: 'REJECTED', placedMinutesAgo: 2 * DAY, verifyMinutes: 4, pharmacist: 'moumita', rx: RX.sharmila, items: [{ sku: 'LOS50-S10', qty: 3 }], rejection: { reason: 'PRESCRIPTION_EXPIRED' } },
-  { number: 'RX-50172', account: 'bikram', patient: 'bikram-self', previewStore: 'HWM', status: 'REJECTED', placedMinutesAgo: 8 * DAY, verifyMinutes: 11, pharmacist: 'sourav', rx: RX.bikram, items: [{ sku: 'LVF500-S5', qty: 2, days: 5 }], rejection: { reason: 'NOT_ON_PRESCRIPTION' } },
+  { number: 'RX-50172', account: 'bikram', patient: 'bikram-self', previewStore: 'HWM', status: 'REJECTED', placedMinutesAgo: 6 * DAY, verifyMinutes: 11, pharmacist: 'sourav', rx: RX.bikram, items: [{ sku: 'LVF500-S5', qty: 2, days: 5 }], rejection: { reason: 'NOT_ON_PRESCRIPTION' } },
   { number: 'RX-50173', account: 'mitali', patient: 'mitali-self', previewStore: 'SLK', status: 'CANCELLED', placedMinutesAgo: 6 * DAY, rx: RX.mitali, items: [{ sku: 'MET1000-S15', qty: 4, dose: [1, 0, 1] }] },
 
   // ── At the stores right now ──

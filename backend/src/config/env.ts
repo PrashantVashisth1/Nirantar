@@ -42,7 +42,8 @@ const EnvSchema = z.object({
     .refine((v) => Buffer.from(v, 'base64').length === 32, 'PRESCRIPTION_KEY must be 32 bytes, base64-encoded'),
 
   /** Gemini (Google AI Studio). Optional: without it, every prescription goes to manual entry. */
-  GEMINI_API_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().optional()),
+  // Empty or "off" means no AI: every prescription goes to manual entry.
+  GEMINI_API_KEY: z.preprocess((v) => (v === '' || v === 'off' ? undefined : v), z.string().optional()),
   GEMINI_MODEL: z.string().default('gemini-3.8-flash'),
   AI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 });

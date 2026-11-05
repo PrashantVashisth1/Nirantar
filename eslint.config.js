@@ -26,7 +26,12 @@ export default defineConfig(
     },
   },
   {
-    files: ['backend/**/*.{ts,mjs}', 'shared/**/*.ts', '*.js'],
+    // CommonJS script run directly with node.
+    files: ['scripts/**/*.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    files: ['backend/**/*.{ts,mjs}', 'shared/**/*.ts', '*.js', 'scripts/**/*.cjs', 'e2e/**/*.ts'],
     languageOptions: { globals: globals.node },
   },
   {
@@ -45,7 +50,7 @@ export default defineConfig(
   },
   {
     // The seed script reports progress on the console.
-    files: ['backend/prisma/**/*.ts'],
+    files: ['backend/prisma/**/*.ts', 'scripts/**/*.cjs'],
     rules: { 'no-console': 'off' },
   },
   {

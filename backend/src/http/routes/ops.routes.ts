@@ -1,15 +1,17 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { dateOnly, todayIst } from '@nirantar/shared';
+import { seedDemoWorld } from '../../../prisma/seed/world';
 import { isDemoMode } from '../../config/env';
 import { prisma } from '../../lib/db';
-import { AppError } from '../../lib/errors';
+import { AppError, notFound } from '../../lib/errors';
 import {
   applyStockImport,
   discardStockImport,
   previewStockImport,
   toImportDto,
 } from '../../services/inventory/stock-import.service';
+import { getH1Register, getOverview, getRules } from '../../services/ops/overview.service';
 import { recentReminders, runReminders } from '../../services/refills/reminder.service';
 import { routeOrder } from '../../services/routing/routing.service';
 import { currentUser, requireAuth, requireRole } from '../middleware/auth';
@@ -107,6 +109,32 @@ opsRouter.get('/awaiting-stock', async (_req, res) => {
 
 opsRouter.post('/orders/:id/retry-routing', async (req, res) => {
   res.json(await routeOrder(parseId(req.params.id)));
+});
+
+// ── Overview, rules and the H1 register ──
+opsRouter.get('/overview', async (_req, res) => {
+  res.json(await getOverview());
+});
+
+opsRouter.get('/rules', async (_req, res) => {
+  res.json(await getRules());
+});
+
+opsRouter.get('/h1-register', async (_req, res) => {
+  res.json(await getH1Register());
+});
+
+// ── Reset demo: test mode only; in production this route doesn't exist ──
+let resetting = false;
+opsRouter.post('/demo/reset', async (_req, res) => {
+  if (!isDemoMode()) throw notFound('Not found.');
+  if (resetting) throw new AppError(409, 'RESET_IN_PROGRESS', 'The demo is already being reset.');
+  resetting = true;
+  try {
+    res.json(await seedDemoWorld());
+  } finally {
+    resetting = false;
+  }
 });
 
 // ── Reminders ──

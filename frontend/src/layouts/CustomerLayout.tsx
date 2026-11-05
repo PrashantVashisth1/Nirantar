@@ -8,6 +8,7 @@ import { LANGUAGE_OPTIONS } from '../i18n';
 import { useAppConfig } from '../lib/config';
 import { useMe, useSignOut } from '../lib/session';
 import { LanguageSheet } from './LanguageSheet';
+import { TestInboxSheet } from './TestInboxSheet';
 
 /**
  * Customer frame: a quiet header and one centred reading column (max 560 px)
@@ -22,6 +23,7 @@ export function CustomerLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [languageOpen, setLanguageOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [inboxOpen, setInboxOpen] = useState(false);
 
   const currentLanguage =
     LANGUAGE_OPTIONS.find((option) => option.locale === i18n.language) ?? LANGUAGE_OPTIONS[0]!;
@@ -40,11 +42,23 @@ export function CustomerLayout({ children }: { children: ReactNode }) {
             Nirantar
           </Link>
           <div className="ml-auto flex items-center gap-1">
-            {config?.testMode && (
-              <span className="mr-1 rounded-full bg-warning-bg px-2.5 py-1 text-caption font-medium text-warning">
-                {t('common.testMode')}
-              </span>
-            )}
+            {config?.testMode &&
+              (me ? (
+                <button
+                  type="button"
+                  onClick={() => setInboxOpen(true)}
+                  aria-label={t('inbox.openLabel')}
+                  className="mr-1 flex min-h-11 items-center"
+                >
+                  <span className="rounded-full bg-warning-bg px-2.5 py-1 text-caption font-medium text-warning underline-offset-2 hover:underline">
+                    {t('common.testMode')}
+                  </span>
+                </button>
+              ) : (
+                <span className="mr-1 rounded-full bg-warning-bg px-2.5 py-1 text-caption font-medium text-warning">
+                  {t('common.testMode')}
+                </span>
+              ))}
             <button
               type="button"
               onClick={() => setLanguageOpen(true)}
@@ -73,6 +87,8 @@ export function CustomerLayout({ children }: { children: ReactNode }) {
       </main>
 
       <LanguageSheet open={languageOpen} onOpenChange={setLanguageOpen} signedIn={Boolean(me)} />
+
+      {me && config?.testMode && <TestInboxSheet open={inboxOpen} onOpenChange={setInboxOpen} />}
 
       {me && (
         <Sheet open={accountOpen} onOpenChange={setAccountOpen} title={t('account.title')}>

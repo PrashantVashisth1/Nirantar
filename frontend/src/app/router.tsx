@@ -10,7 +10,7 @@ import { OrderStatusPage } from '../features/order/OrderStatusPage';
 import { QueuePage } from '../features/staff/QueuePage';
 import { StoreOrdersPage } from '../features/staff/StoreOrdersPage';
 import { WorkspacePage } from '../features/staff/WorkspacePage';
-import { NotFoundPage } from '../pages/BuildingPage';
+import { NotFoundPage } from '../pages/NotFoundPage';
 import { DesignPreviewPage } from '../pages/DesignPreviewPage';
 import { RequireRole, RootRedirect } from './guards';
 

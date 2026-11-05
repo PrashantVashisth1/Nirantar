@@ -12,7 +12,8 @@
     "genericError": "Something went wrong. Please try again.",
     "pharmacistFooter": "Every order is checked by a registered pharmacist.",
     "language": "Language",
-    "comingSoon": "This part of the app is being built."
+    "notFoundTitle": "We couldn't find that page.",
+    "notFoundAction": "Go to the start"
   },
   "signIn": {
     "title": "Your monthly medicines, without the wait.",
@@ -299,5 +300,12 @@
     "payment": "Payment",
     "viewPrescription": "View prescription",
     "notFound": "We couldn't find this order."
+  },
+  "inbox": {
+    "title": "Test inbox",
+    "note": "In the real app these would arrive by SMS or WhatsApp. In test mode nothing is sent, so they appear here.",
+    "empty": "No messages yet.",
+    "openLabel": "Test mode: open test inbox",
+    "viewOrder": "View order"
   }
 }

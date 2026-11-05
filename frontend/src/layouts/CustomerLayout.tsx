@@ -1,10 +1,10 @@
 import { Languages, LogOut, UserRound } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { Button } from '../design-system/Button';
 import { Sheet } from '../design-system/Sheet';
-import { LANGUAGE_OPTIONS } from '../i18n';
+import { LANGUAGE_OPTIONS, setLocale } from '../i18n';
 import { useAppConfig } from '../lib/config';
 import { useMe, useSignOut } from '../lib/session';
 import { LanguageSheet } from './LanguageSheet';
@@ -24,6 +24,12 @@ export function CustomerLayout({ children }: { children: ReactNode }) {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [inboxOpen, setInboxOpen] = useState(false);
+
+  // The language saved on the account wins, so it follows the customer to a new phone.
+  const accountLocale = me?.role === 'CUSTOMER' ? me.locale : undefined;
+  useEffect(() => {
+    if (accountLocale && accountLocale !== i18n.language) setLocale(accountLocale);
+  }, [accountLocale, i18n.language]);
 
   const currentLanguage =
     LANGUAGE_OPTIONS.find((option) => option.locale === i18n.language) ?? LANGUAGE_OPTIONS[0]!;

@@ -97,7 +97,8 @@
     "emptyStep2": "A pharmacist checks every medicine",
     "emptyStep3": "Delivered from your nearest store",
     "trySample": "Try with a sample prescription",
-    "loadError": "We couldn't load your medicines."
+    "loadError": "We couldn't load your medicines.",
+    "andMore": "{{first}} and {{count}} more"
   },
   "family": {
     "title": "Who are you ordering for?",

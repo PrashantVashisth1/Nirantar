@@ -81,7 +81,7 @@ function ResetDemo() {
   });
   return (
     <>
-      <Button variant="secondary" icon={<RotateCcw className="size-4" aria-hidden />} onClick={() => setOpen(true)}>
+      <Button variant="secondary" size="md" icon={<RotateCcw className="size-4" aria-hidden />} onClick={() => setOpen(true)}>
         Reset demo
       </Button>
       <Sheet

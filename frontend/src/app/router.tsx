@@ -1,20 +1,28 @@
 import type { Role } from '@nirantar/shared';
-import type { ReactNode } from 'react';
+import { Suspense, lazy, type ReactNode } from 'react';
 import { createBrowserRouter } from 'react-router';
 import { OnboardingPage } from '../features/auth/OnboardingPage';
 import { SignInPage } from '../features/auth/SignInPage';
 import { HomePage } from '../features/home/HomePage';
-import { OperationsPage } from '../features/operations/OperationsPage';
 import { NewOrderPage } from '../features/order/NewOrderPage';
 import { OrderStatusPage } from '../features/order/OrderStatusPage';
-import { QueuePage } from '../features/staff/QueuePage';
-import { StoreOrdersPage } from '../features/staff/StoreOrdersPage';
-import { WorkspacePage } from '../features/staff/WorkspacePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
-import { DesignPreviewPage } from '../pages/DesignPreviewPage';
+import { LoadingNote } from '../design-system/States';
 import { RequireRole, RootRedirect } from './guards';
 
-const only = (roles: Role[], page: ReactNode) => <RequireRole roles={roles}>{page}</RequireRole>;
+// Staff screens and the design preview are separate downloads: customers on a
+// phone never pay for code they can't open.
+const QueuePage = lazy(() => import('../features/staff/QueuePage').then((m) => ({ default: m.QueuePage })));
+const WorkspacePage = lazy(() => import('../features/staff/WorkspacePage').then((m) => ({ default: m.WorkspacePage })));
+const StoreOrdersPage = lazy(() => import('../features/staff/StoreOrdersPage').then((m) => ({ default: m.StoreOrdersPage })));
+const OperationsPage = lazy(() => import('../features/operations/OperationsPage').then((m) => ({ default: m.OperationsPage })));
+const DesignPreviewPage = lazy(() => import('../pages/DesignPreviewPage').then((m) => ({ default: m.DesignPreviewPage })));
+
+const only = (roles: Role[], page: ReactNode) => (
+  <RequireRole roles={roles}>
+    <Suspense fallback={<LoadingNote />}>{page}</Suspense>
+  </RequireRole>
+);
 
 /**
  * Routes. Each screen checks the role on the client for a smooth experience;
@@ -34,6 +42,6 @@ export const router = createBrowserRouter([
   { path: '/pharmacist/store', element: only(['PHARMACIST'], <StoreOrdersPage />) },
   // Central operations (O1)
   { path: '/ops/*', element: only(['OPS'], <OperationsPage />) },
-  ...(import.meta.env.DEV ? [{ path: '/__design', element: <DesignPreviewPage /> }] : []),
+  ...(import.meta.env.DEV ? [{ path: '/__design', element: <Suspense fallback={<LoadingNote />}><DesignPreviewPage /></Suspense> }] : []),
   { path: '*', element: <NotFoundPage /> },
 ]);

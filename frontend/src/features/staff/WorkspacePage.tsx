@@ -34,7 +34,9 @@ interface EditItem {
   decision: 'APPROVE' | 'REMOVE';
   removedReason: string;
   dose: { morning: number; noon: number; night: number } | null;
-  doseFromAi: boolean;
+  /** Where a pre-filled dose came from, shown next to the dose. Cleared when edited. */
+  doseNote: string | null;
+  aiUnsure?: boolean;
   asNeeded: boolean;
   durationDays: number | null;
   genericOptions: ProductSummaryDto[];
@@ -103,10 +105,11 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
         quantity: item.quantity,
         decision: item.status === 'REMOVED' ? 'REMOVE' : 'APPROVE',
         removedReason: '',
-        dose: item.dose ?? aiLine?.dose ?? null,
-        doseFromAi: !item.dose && Boolean(aiLine?.dose),
+        dose: item.dose ?? aiLine?.dose ?? item.lastFill?.dose ?? null,
+        doseNote: item.dose ? null : aiLine?.dose ? 'suggested from the text' : item.lastFill ? 'from the last fill' : null,
+        aiUnsure: Boolean(aiLine?.uncertain),
         asNeeded: item.asNeeded,
-        durationDays: item.durationDays ?? aiLine?.durationDays ?? null,
+        durationDays: item.durationDays ?? aiLine?.durationDays ?? item.lastFill?.durationDays ?? null,
         genericOptions: item.genericOptions,
         offerGenericId: item.offeredGenericId,
       };
@@ -126,6 +129,9 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
   if (hasH1 && !details.prescriberRegNo.trim()) missing.push('registration no. (H1)');
   if (items.some((i) => i.decision === 'REMOVE' && !i.removedReason.trim())) missing.push('a reason for each removed medicine');
   if (!items.some((i) => i.decision === 'APPROVE')) missing.push('at least one approved medicine');
+  // Without a dose the refill date can't be worked out, so a prescription medicine needs one.
+  const noDose = (i: EditItem) => i.product.schedule !== 'OTC' && !i.asNeeded && (i.dose?.morning ?? 0) + (i.dose?.noon ?? 0) + (i.dose?.night ?? 0) === 0;
+  if (items.some((i) => i.decision === 'APPROVE' && noDose(i))) missing.push('a dose for each prescription medicine');
   if (!confirmed) missing.push('the confirmation tick');
 
   const approve = useMutation({
@@ -243,7 +249,7 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
                     onAdd={(product) =>
                       setItems((list) => [
                         ...list,
-                        { key: `new-${line.lineIndex}`, product, quantity: line.suggestedQuantity, decision: 'APPROVE', removedReason: '', dose: line.dose, doseFromAi: Boolean(line.dose), asNeeded: false, durationDays: line.durationDays, genericOptions: [], offerGenericId: null },
+                        { key: `new-${line.lineIndex}`, product, quantity: line.suggestedQuantity, decision: 'APPROVE', removedReason: '', dose: line.dose, doseNote: line.dose ? 'suggested from the text' : null, aiUnsure: line.uncertain, asNeeded: false, durationDays: line.durationDays, genericOptions: [], offerGenericId: null },
                       ])
                     }
                   />
@@ -298,7 +304,7 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
         open={sheet === 'add'}
         onClose={() => setSheet(null)}
         onAdd={(product) => {
-          setItems((list) => [...list, { key: `add-${product.id}-${list.length}`, product, quantity: 1, decision: 'APPROVE', removedReason: '', dose: null, doseFromAi: false, asNeeded: false, durationDays: null, genericOptions: [], offerGenericId: null }]);
+          setItems((list) => [...list, { key: `add-${product.id}-${list.length}`, product, quantity: 1, decision: 'APPROVE', removedReason: '', dose: null, doseNote: null, asNeeded: false, durationDays: null, genericOptions: [], offerGenericId: null }]);
           setSheet(null);
         }}
       />
@@ -330,7 +336,16 @@ function ItemBlock({ index, item, editable, onChange, onDrop }: { index: number;
       <div className="flex flex-wrap items-start gap-2">
         <span className="font-mono text-staff-table text-ink-3">{index + 1}</span>
         <div className="min-w-0 flex-1">
-          <p className="text-staff-section font-semibold text-ink">{item.product.displayName}</p>
+          <p className="text-staff-section font-semibold text-ink">
+            {item.product.displayName}
+            {item.aiUnsure && (
+              <span className="ml-2 align-middle">
+                <Pill tone="warning" size="staff">
+                  AI unsure
+                </Pill>
+              </span>
+            )}
+          </p>
           <p className="text-staff-table text-ink-2">
             {item.product.brandName} · {item.product.packLabel} · {formatRupees(item.product.pricePaise)} per pack
           </p>
@@ -356,7 +371,7 @@ function ItemBlock({ index, item, editable, onChange, onDrop }: { index: number;
           <div>
             <span className={label}>
               Dose (morning · noon · night)
-              {item.doseFromAi && <span className="text-staff-caption font-normal text-ink-3">suggested from the text</span>}
+              {item.doseNote && <span className="text-staff-caption font-normal text-ink-3">{item.doseNote}</span>}
             </span>
             <div className="flex items-center gap-2">
               {(['morning', 'noon', 'night'] as const).map((slot) => (
@@ -365,7 +380,7 @@ function ItemBlock({ index, item, editable, onChange, onDrop }: { index: number;
                   aria-label={slot}
                   disabled={!editable || item.asNeeded}
                   value={item.dose?.[slot] ?? 0}
-                  onChange={(e) => onChange({ dose: { morning: 0, noon: 0, night: 0, ...item.dose, [slot]: Number(e.target.value) }, doseFromAi: false })}
+                  onChange={(e) => onChange({ dose: { morning: 0, noon: 0, night: 0, ...item.dose, [slot]: Number(e.target.value) }, doseNote: null })}
                   className="h-9 w-16 rounded-sm border border-line-strong bg-surface px-2 text-staff-body tabular-nums"
                 >
                   {DOSES.map((d) => <option key={d} value={d}>{d === 0.5 ? '½' : d === 1.5 ? '1½' : d}</option>)}

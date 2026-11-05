@@ -293,7 +293,7 @@ function OrderList({
                       : firstName(order.patient.fullName)}
                   </span>
                 </div>
-                <p className="mt-0.5 truncate text-body-lg text-ink">{order.itemsSummary}</p>
+                <p className="mt-0.5 truncate text-body-lg text-ink">{order.moreItems > 0 ? t('home.andMore', { first: order.firstItem, count: order.moreItems }) : order.firstItem}</p>
                 <div className="mt-1.5">
                   <StatusPill status={order.status} />
                 </div>

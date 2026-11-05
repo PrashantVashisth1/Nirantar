@@ -69,6 +69,8 @@ export interface OrderSummaryDto {
   patient: { id: string; fullName: string; relation: Relation };
   /** e.g. "Metformin 500 mg × 4" or "Metformin 500 mg × 4 and 1 more" */
   itemsSummary: string;
+  firstItem: string;
+  moreItems: number;
   itemCount: number;
   totalPaise: number;
   storeName: string | null;
@@ -186,6 +188,8 @@ export interface WorkspaceItemDto {
   durationDays: number | null;
   genericOptions: ProductSummaryDto[];
   offeredGenericId: string | null;
+  /** The dose confirmed on this patient's last fill (refill orders only). */
+  lastFill: { dose: { morning: number; noon: number; night: number }; durationDays: number | null } | null;
 }
 
 export interface WorkspaceDto {

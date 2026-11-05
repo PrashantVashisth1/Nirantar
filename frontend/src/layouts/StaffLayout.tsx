@@ -15,18 +15,18 @@ export function StaffLayout({ children }: { children: ReactNode }) {
   return (
     <div lang="en" className="min-h-dvh bg-canvas">
       <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex min-h-14 max-w-[1440px] flex-wrap items-center gap-x-3 px-4 py-1.5 sm:flex-nowrap sm:py-0 sm:px-6">
           <span className="text-staff-section font-semibold text-pine">Nirantar</span>
           <span className="hidden text-staff-table text-ink-3 sm:inline">
             {me?.role === 'PHARMACIST' ? 'Pharmacist' : 'Central operations'}
           </span>
           {config?.testMode && (
-            <span className="rounded-full bg-warning-bg px-2 py-0.5 text-staff-caption font-medium text-warning">
+            <span className="whitespace-nowrap rounded-full bg-warning-bg px-2 py-0.5 text-staff-caption font-medium text-warning">
               Test mode
             </span>
           )}
           {me?.role === 'PHARMACIST' && (
-            <nav aria-label="Pharmacist" className="ml-2 flex gap-1">
+            <nav aria-label="Pharmacist" className="order-last flex w-full gap-1 sm:order-none sm:ml-2 sm:w-auto">
               {[
                 { to: '/pharmacist', label: 'Queue', end: true },
                 { to: '/pharmacist/store', label: 'Store orders', end: false },
@@ -36,7 +36,7 @@ export function StaffLayout({ children }: { children: ReactNode }) {
                   to={link.to}
                   end={link.end}
                   className={({ isActive }) =>
-                    `flex h-9 items-center rounded-sm px-3 text-staff-body font-medium ${isActive ? 'bg-pine-subtle text-pine' : 'text-ink-2 hover:bg-sunken'}`
+                    `flex h-9 items-center whitespace-nowrap rounded-sm px-3 text-staff-body font-medium ${isActive ? 'bg-pine-subtle text-pine' : 'text-ink-2 hover:bg-sunken'}`
                   }
                 >
                   {link.label}

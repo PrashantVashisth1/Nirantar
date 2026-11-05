@@ -5,7 +5,9 @@ export const DESKTOP = { width: 1440, height: 1000 };
 
 export const SUDIPTA = '9000010004';
 export const DEBASISH = '9000010001';
+export const FARHANA = '9000010005';
 export const IMRAN = 'imran.hossain@demo.example';
+export const SANJUKTA = 'sanjukta.roy@demo.example';
 export const OPS = 'ops@demo.example';
 export const STAFF_PASSWORD = 'Nirantar@2026';
 

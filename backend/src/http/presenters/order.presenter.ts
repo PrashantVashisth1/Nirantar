@@ -41,6 +41,9 @@ export function toOrderSummary(order: OrderForSummary): OrderSummaryDto {
     source: order.source,
     patient: order.patient,
     itemsSummary: rest.length > 0 ? `${firstText} and ${rest.length} more` : firstText,
+    // Parts of the same summary, so the customer's screen can say it in their language.
+    firstItem: firstText,
+    moreItems: rest.length,
     itemCount: order.items.length,
     totalPaise: order.totalPaise,
     storeName: order.store?.name ?? null,

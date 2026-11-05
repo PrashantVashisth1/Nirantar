@@ -90,7 +90,7 @@ export function OverviewTab() {
       </section>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <section>
+        <section className="min-w-0">
           <h2 className="text-staff-section font-semibold text-ink">Verification, last 7 days</h2>
           <div className={`mt-3 ${tc.wrap}`}>
             <table className={tc.table}>
@@ -131,7 +131,7 @@ export function OverviewTab() {
           </div>
         </section>
 
-        <section>
+        <section className="min-w-0">
           <h2 className="text-staff-section font-semibold text-ink">Rejections, last 7 days</h2>
           {data.rejections.length === 0 ? (
             <p className="mt-3 text-staff-body text-ink-2">No orders were rejected.</p>

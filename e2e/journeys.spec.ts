@@ -1,9 +1,9 @@
 /**
- * The product's main journeys from the plan (E1, E2, E3) plus the stock file.
+ * The product's main journeys from the plan (E1, E2, E3), plus language and the stock file.
  * They run in order against one demo world, like a real day at the chain.
  */
 import { expect, test, type BrowserContext } from '@playwright/test';
-import { DEBASISH, IMRAN, OPS, PHONE_360, SUDIPTA, expectNoSidewaysScroll, signInCustomer, signInStaff } from './helpers';
+import { DEBASISH, FARHANA, IMRAN, OPS, PHONE_360, SANJUKTA, SUDIPTA, expectNoSidewaysScroll, signInCustomer, signInStaff } from './helpers';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -116,10 +116,29 @@ test('E3: a reminder goes out, and the customer reorders in one tap', async ({ b
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByRole('button', { name: 'Place order' }).click();
   await expect(page.getByText('Your pharmacist is checking the prescription')).toBeVisible();
+  const refillNumber = (await page.getByText(/RX-\d+/).first().innerText()).match(/RX-\d+/)![0];
+  await context.close();
+
+  // The pharmacist doesn't retype the dose: it's offered from the last fill, then approved.
+  const pharmacist = await signInStaff(browser, SANJUKTA);
+  await pharmacist.page.getByRole('link', { name: refillNumber }).click();
+  await expect(pharmacist.page.getByText('from the last fill')).toBeVisible();
+  await expect(pharmacist.page.getByLabel('morning')).toHaveValue('1');
+  await pharmacist.page.getByRole('checkbox', { name: /The prescription is valid/ }).check();
+  await pharmacist.page.getByRole('button', { name: /Approve & route/ }).click();
+  await expect(pharmacist.page).toHaveURL(/\/pharmacist$/);
+  await pharmacist.context.close();
+});
+
+test('E4: the language saved on the account follows the customer to a new phone', async ({ browser }) => {
+  const { context, page } = await signInCustomer(browser, FARHANA);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
+  await expect(page.getByRole('link', { name: 'প্রেসক্রিপশন আপলোড করুন' }).first()).toBeVisible();
+  await expectNoSidewaysScroll(page);
   await context.close();
 });
 
-test('E4: a new stock file routes the order waiting for stock; safety line and H1 register are visible', async ({ browser }) => {
+test('E5: a new stock file routes the order waiting for stock; safety line and H1 register are visible', async ({ browser }) => {
   const { context, page } = await signInStaff(browser, OPS);
 
   await expect(page.getByText('H/H1 items dispatched without approval: 0')).toBeVisible();

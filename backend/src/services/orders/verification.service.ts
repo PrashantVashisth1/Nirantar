@@ -106,6 +106,26 @@ export async function getWorkspace(pharmacistId: string, orderId: string): Promi
   }
 
   const generics = await genericOptions(order.items.map((i) => i.product));
+  // A refill comes with no dose of its own: offer the one confirmed on the last fill.
+  // The pharmacist still has to approve it.
+  const lastFills = new Map(
+    order.source === 'REFILL'
+      ? await Promise.all(
+          order.items.map(async (item) => {
+            const last = await prisma.orderItem.findFirst({
+              where: {
+                productId: item.productId,
+                status: 'ACTIVE',
+                doseMorning: { not: null },
+                order: { patientId: order.patientId, status: 'DELIVERED' },
+              },
+              orderBy: { approvedAt: 'desc' },
+            });
+            return [item.id, last] as const;
+          }),
+        )
+      : [],
+  );
   return {
     order: {
       id: order.id,
@@ -131,6 +151,10 @@ export async function getWorkspace(pharmacistId: string, orderId: string): Promi
       durationDays: item.durationDays,
       genericOptions: (generics.get(item.productId) ?? []).map(toProductSummary),
       offeredGenericId: item.approvedGenericProductId,
+      lastFill: (() => {
+        const last = lastFills.get(item.id);
+        return last ? { dose: { morning: last.doseMorning ?? 0, noon: last.doseNoon ?? 0, night: last.doseNight ?? 0 }, durationDays: last.durationDays } : null;
+      })(),
     })),
     reviewingBy: someoneElse,
   };

@@ -114,8 +114,15 @@ export async function readPrescription(prescriptionId: string) {
     return;
   }
 
-  const catalog = await loadCatalog();
-  const extraction = result.extraction;
+  const draft = buildDraft(result.extraction, await loadCatalog());
+  await prisma.prescription.updateMany({
+    where: { id: prescriptionId, aiStatus: { in: ['READING', 'FAILED'] } },
+    data: { ...draft, aiModel: result.model },
+  });
+}
+
+/** Turns what the AI transcribed into a catalog-matched draft and a status. */
+export function buildDraft(extraction: Extraction, catalog: CatalogProduct[]) {
   const lines: StoredDraft['lines'] = extraction.items.map((item, lineIndex) => {
     const match = matchLine(item.medicineName.value, item.strength.value, catalog);
     const dose = parseDose(item.dosageText.value);
@@ -147,13 +154,10 @@ export async function readPrescription(prescriptionId: string) {
         ? 'READY'
         : 'UNSURE';
 
-  await prisma.prescription.updateMany({
-    where: { id: prescriptionId, aiStatus: { in: ['READING', 'FAILED'] } },
-    data: { aiStatus, aiDraft: { extraction, lines } as unknown as Prisma.InputJsonValue, aiModel: result.model },
-  });
+  return { aiStatus, aiDraft: { extraction, lines } as unknown as Prisma.InputJsonValue } as const;
 }
 
-async function loadCatalog(): Promise<CatalogProduct[]> {
+export async function loadCatalog(): Promise<CatalogProduct[]> {
   const products = await prisma.product.findMany({ where: { isActive: true } });
   return products.filter((p) => !isBannedOnline(p.schedule));
 }

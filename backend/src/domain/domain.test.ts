@@ -1,5 +1,6 @@
 import { dateOnly } from '@nirantar/shared';
 import { describe, expect, it } from 'vitest';
+import { matchLine } from './matcher';
 import { haversineKm, sortByDistance } from './distance';
 import { calculateRefill, dueReminderOffset } from './refill-math';
 import { parseStockCsv } from './stock-csv';
@@ -101,5 +102,33 @@ describe('stock CSV validation', () => {
     expect(parseStockCsv('store,sku,qty\nSLK,MET500-S15,1', known).fileError).toMatch(/Missing column/);
     expect(parseStockCsv('store_code,sku,on_hand\n', known).fileError).toMatch(/no rows/);
     expect(parseStockCsv('', known).fileError).toMatch(/empty/);
+  });
+});
+
+describe('matchLine with handwritten strengths (found by the AI eval)', () => {
+  const product = (id: string, name: string, strength: string) => ({ id, name, molecule: 'X', strength, aliases: [name], packUnits: 10, isGeneric: false });
+  const catalog = [product('g1', 'Glimora 1', '1 mg'), product('g2', 'Glimora 2', '2 mg'), product('t25', 'Thyrova 25', '25 mcg'), product('t100', 'Thyrova 100', '100 mcg')];
+
+  it('reads a strength without a unit as the product with that number', () => {
+    expect(matchLine('Glimora', '2', catalog)).toMatchObject({ productId: 'g2', quality: 'STRONG' });
+    expect(matchLine('Thyrova', '100', catalog)).toMatchObject({ productId: 't100', quality: 'STRONG' });
+  });
+
+  it('finds the number in the name when strength is empty', () => {
+    expect(matchLine('Glimora 2', null, catalog)).toMatchObject({ productId: 'g2' });
+  });
+
+  it('never selects another strength when the written number is not stocked', () => {
+    expect(matchLine('Glimora', '4', catalog)).toMatchObject({ productId: null, quality: 'NONE' });
+  });
+
+  it('selects nothing when no strength is written and several are stocked, but still lists them', () => {
+    const result = matchLine('Glimora', null, catalog);
+    expect(result.productId).toBeNull();
+    expect(result.candidateIds).toEqual(expect.arrayContaining(['g1', 'g2']));
+  });
+
+  it('selects the product when no strength is written and only one is stocked', () => {
+    expect(matchLine('Glimora', null, [product('g2', 'Glimora 2', '2 mg')])).toMatchObject({ productId: 'g2', quality: 'CHECK' });
   });
 });

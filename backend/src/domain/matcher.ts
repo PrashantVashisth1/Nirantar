@@ -36,6 +36,11 @@ export function normalizeStrength(text: string | null | undefined): string | nul
   return `${value}${unit}`;
 }
 
+function firstNumber(text: string | null | undefined): number | null {
+  const match = /\d+(?:\.\d+)?/.exec(text ?? '');
+  return match ? Number(match[0]) : null;
+}
+
 /** Dice similarity of letter pairs: 1 = same, 0 = nothing in common. Robust to small typos. */
 export function similarity(a: string, b: string): number {
   const x = a.replace(/ /g, '');
@@ -76,13 +81,20 @@ export function matchLine(
 ): MatchResult {
   if (!medicineName) return { quality: 'NONE', productId: null, candidateIds: [] };
   const writtenStrength = normalizeStrength(strengthText) ?? normalizeStrength(medicineName);
+  // Handwritten brands usually have no unit: "Glimora 2" means 2 mg, "Thyrova 100" means 100 mcg.
+  const writtenNumber = writtenStrength === null ? (firstNumber(strengthText) ?? firstNumber(medicineName)) : null;
+  const strengthKnown = writtenStrength !== null || writtenNumber !== null;
 
   const scored = catalog
     .map((product) => {
       const name = nameScore(medicineName, product);
       const productStrength = normalizeStrength(product.strength);
-      const strength = writtenStrength === null ? 0.5 : productStrength === writtenStrength ? 1 : 0;
-      return { product, name, strengthMatches: strength === 1, score: 0.7 * name + 0.3 * strength };
+      const matches =
+        writtenStrength !== null
+          ? productStrength === writtenStrength
+          : writtenNumber !== null && firstNumber(product.strength) === writtenNumber;
+      const strength = !strengthKnown ? 0.5 : matches ? 1 : 0;
+      return { product, name, strengthMatches: matches, score: 0.7 * name + 0.3 * strength };
     })
     // Brands before generics when scores tie: the pharmacist offers generics separately.
     .sort((a, b) => b.score - a.score || Number(a.product.isGeneric) - Number(b.product.isGeneric));
@@ -90,9 +102,15 @@ export function matchLine(
   const candidateIds = scored.filter((s) => s.name >= 0.4).slice(0, 5).map((s) => s.product.id);
   const best = scored[0];
   if (!best || best.name < 0.5) return { quality: 'NONE', productId: null, candidateIds };
-  if (writtenStrength !== null && !best.strengthMatches) {
+  if (strengthKnown && !best.strengthMatches) {
     // The name matches but we don't stock that strength: never substitute another strength.
     return { quality: 'NONE', productId: null, candidateIds };
+  }
+  if (!strengthKnown) {
+    // No strength written, and we stock this medicine in several: choosing one would be a guess.
+    const bestStrength = normalizeStrength(best.product.strength);
+    const ambiguous = scored.some((s) => s.name >= best.name - 0.05 && normalizeStrength(s.product.strength) !== bestStrength);
+    if (ambiguous) return { quality: 'NONE', productId: null, candidateIds };
   }
   const quality: MatchQuality = best.score >= 0.8 && best.strengthMatches ? 'STRONG' : 'CHECK';
   return { quality, productId: best.product.id, candidateIds };

@@ -44,7 +44,9 @@ const EnvSchema = z.object({
   /** Gemini (Google AI Studio). Optional: without it, every prescription goes to manual entry. */
   // Empty or "off" means no AI: every prescription goes to manual entry.
   GEMINI_API_KEY: z.preprocess((v) => (v === '' || v === 'off' ? undefined : v), z.string().optional()),
-  GEMINI_MODEL: z.string().default('gemini-3.8-flash'),
+  GEMINI_MODEL: z.string().default('gemini-3.6-flash'),
+  // Used for the one retry. A different model, because an overloaded one stays overloaded.
+  GEMINI_FALLBACK_MODEL: z.string().default('gemini-3.5-flash-lite'),
   AI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 });
 

@@ -113,4 +113,12 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **`npm run ai:eval` scores the reader on labelled synthetic samples.** It counts lines matched to the exact product, correct doses, wrong products selected, and whether a blurry or non-prescription photo ever comes back as a confident read. A test feeds a perfect transcription through the same scoring, so a lower real score points at the reader rather than our matcher.
 
+**The first real AI call found two problems no mocked test could.** Gemini refused our output schema as too complex ("too many states"), so every read would have failed quietly into manual entry; removing `maxItems` fixed it, and Zod still enforces the limits on the answer. And `gemini-3.8-flash` was overloaded (503), while the SDK's hidden retries made it look like a timeout. So the default is now the stable `gemini-3.6-flash`, the SDK's retries are off, the one retry goes to a second model, and a refused request isn't retried. This replaces the model named in the plan (§8), which Google's docs now label "New" rather than "Stable".
+
+**The first full eval found a real matcher bug.** Handwritten "Glimora 2" comes back with strength "2" and no unit. We ignored a number without a unit, all strengths then tied, and **Glimora 1** was selected: exactly what the plan says must never happen. The pharmacist would still have checked it, but now a bare number has to equal the product's strength, and if no strength is written and we stock several, nothing is pre-selected. The eval's "wrong product" count is what surfaced this, which is why it counts that separately from accuracy.
+
+**Three attempts instead of two (plan §8 said one retry).** That first eval lost 5 of 16 reads to free-tier overload. A second model, then the first again after short waits, still fits the 2-minute limit, and a refused request still isn't retried.
+
+**The free tier allows about 20 AI reads a day per model.** Measured, not assumed: Google answered "limit: 20 requests per day on Free Tier" during the eval. So a model over its limit isn't asked again, the eval can resume across days, the seeded orders carry drafts that need no AI call, and when the quota runs out new uploads take the manual path, which is complete. A real deployment would need a paid tier; this is stated in the TDD rather than hidden.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

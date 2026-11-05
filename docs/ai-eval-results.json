@@ -1,0 +1,171 @@
+{
+  "summary": {
+    "model": "gemini-3.6-flash",
+    "fallbackModel": "gemini-3.5-flash-lite",
+    "readsByFallback": 7,
+    "runAt": "2026-11-05T19:37:48.951Z",
+    "samplesRead": 7,
+    "failures": [
+      {
+        "file": "rx-h1",
+        "error": "PROVIDER_ERROR"
+      },
+      {
+        "file": "rx-mitali",
+        "error": "PROVIDER_ERROR"
+      },
+      {
+        "file": "rx-tapas",
+        "error": "PROVIDER_ERROR"
+      },
+      {
+        "file": "rx-handwritten",
+        "error": "PROVIDER_ERROR"
+      },
+      {
+        "file": "rx-haripada",
+        "error": "PROVIDER_ERROR"
+      },
+      {
+        "file": "rx-farhana",
+        "error": "PROVIDER_ERROR"
+      },
+      {
+        "file": "rx-rina-old",
+        "error": "PROVIDER_ERROR"
+      },
+      {
+        "file": "rx-farhana-old",
+        "error": "PROVIDER_ERROR"
+      },
+      {
+        "file": "rx-bikram",
+        "error": "PROVIDER_ERROR"
+      }
+    ],
+    "linesExpected": 8,
+    "linesMatched": 8,
+    "dosesCorrect": 8,
+    "wrongProductSelected": 0,
+    "unsafeReads": [],
+    "patientNamesCorrect": 5,
+    "medianLatencySeconds": 11.1,
+    "byKind": [
+      {
+        "kind": "typed",
+        "samples": 3,
+        "linesExpected": 4,
+        "linesMatched": 4,
+        "dosesCorrect": 4
+      },
+      {
+        "kind": "handwriting_font",
+        "samples": 2,
+        "linesExpected": 4,
+        "linesMatched": 4,
+        "dosesCorrect": 4
+      },
+      {
+        "kind": "handwritten_photo",
+        "samples": 0,
+        "linesExpected": 0,
+        "linesMatched": 0,
+        "dosesCorrect": 0
+      }
+    ],
+    "note": "Measured on a small synthetic set, so this does not prove accuracy on real prescriptions."
+  },
+  "scores": [
+    {
+      "file": "rx-typed",
+      "kind": "typed",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 19130,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-thyroid",
+      "kind": "typed",
+      "aiStatus": "READY",
+      "expected": 1,
+      "matched": 1,
+      "doseCorrect": 1,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 10013,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-debasish",
+      "kind": "typed",
+      "aiStatus": "READY",
+      "expected": 1,
+      "matched": 1,
+      "doseCorrect": 1,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 12890,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-nirmal",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 9625,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-sharmila",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 9306,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-blurry",
+      "kind": "blurry",
+      "aiStatus": "UNSURE",
+      "expected": 0,
+      "matched": 0,
+      "doseCorrect": 0,
+      "wrongProduct": 0,
+      "patientCorrect": null,
+      "safe": true,
+      "latencyMs": 11086,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "not-a-prescription",
+      "kind": "not_rx",
+      "aiStatus": "UNREADABLE",
+      "expected": 0,
+      "matched": 0,
+      "doseCorrect": 0,
+      "wrongProduct": 0,
+      "patientCorrect": null,
+      "safe": true,
+      "latencyMs": 11834,
+      "model": "gemini-3.5-flash-lite"
+    }
+  ]
+}

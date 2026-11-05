@@ -3,6 +3,7 @@
  *
  *   npm run ai:eval              every sample; writes docs/ai-eval-results.json
  *   npm run ai:eval -- --limit 1 one sample: a quick check that the key works
+ *   npm run ai:eval -- --resume  only the samples not scored yet (free tier: 20 reads a day)
  *
  * Needs GEMINI_API_KEY in backend/.env and a seeded database (for the catalog).
  * Only synthetic images are ever sent.
@@ -21,10 +22,14 @@ const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const SAMPLES = path.join(ROOT, 'frontend', 'public', 'samples');
 /** Free-tier quota is per minute, so samples are spaced out. */
 const GAP_MS = 6_000;
+const RESULTS = path.join(ROOT, 'docs', 'ai-eval-results.json');
 
 function explain(detail: string): string {
   if (/api.?key|401|403|permission|unauth/i.test(detail)) return 'The key was refused. Check GEMINI_API_KEY in backend/.env (no quotes, no spaces) and that it is restricted to the Gemini API.';
   if (/404|not found/i.test(detail)) return `The model "${env.GEMINI_MODEL}" isn't available for this key. Try GEMINI_MODEL=gemini-3.6-flash in backend/.env.`;
+  if (/per day/i.test(detail)) return 'Free-tier daily limit reached. After the time shown above, run: npm run ai:eval -- --resume';
+  if (/503|overloaded|high demand|unavailable|TIMEOUT/i.test(detail)) return 'Google says this model is overloaded right now. That usually passes; run again in a few minutes.';
+  if (/too many states|schema/i.test(detail)) return 'Gemini refused our output schema. See EXTRACTION_JSON_SCHEMA in extraction.ts.';
   if (/429|quota|rate|exhausted/i.test(detail)) return 'Free-tier quota reached. Wait a minute (or until tomorrow for the daily limit) and run again.';
   return 'Provider error. Run again; if it repeats, check the message above.';
 }
@@ -37,6 +42,8 @@ async function main() {
   }
   const limitAt = process.argv.indexOf('--limit');
   const limit = limitAt > -1 ? Number(process.argv[limitAt + 1]) : Infinity;
+  const previous: (SampleScore & { latencyMs: number; model: string })[] =
+    process.argv.includes('--resume') && existsSync(RESULTS) ? JSON.parse(readFileSync(RESULTS, 'utf8')).scores : [];
 
   const reader = new GeminiReader(env.GEMINI_API_KEY);
   const catalog = await loadCatalog();
@@ -48,11 +55,12 @@ async function main() {
   const idBySku = new Map(catalog.map((p) => [(p as unknown as { sku: string }).sku, p.id]));
   const idOf = (sku: string) => idBySku.get(sku) ?? sku;
 
-  const labels = EVAL_LABELS.filter((l) => existsSync(path.join(SAMPLES, `${l.file}.jpg`))).slice(0, limit);
+  const done = new Set(previous.map((s) => s.file));
+  const labels = EVAL_LABELS.filter((l) => existsSync(path.join(SAMPLES, `${l.file}.jpg`)) && !done.has(l.file)).slice(0, limit);
   const skipped = EVAL_LABELS.filter((l) => !existsSync(path.join(SAMPLES, `${l.file}.jpg`))).map((l) => l.file);
   console.log(`Model: ${env.GEMINI_MODEL} · samples: ${labels.length}${skipped.length ? ` · not found, skipped: ${skipped.join(', ')}` : ''}\n`);
 
-  const scores: (SampleScore & { latencyMs: number })[] = [];
+  const scores = [...previous];
   const failures: { file: string; error: string }[] = [];
   for (const [index, label] of labels.entries()) {
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, GAP_MS));
@@ -71,14 +79,16 @@ async function main() {
       failures.push({ file: label.file, error: result.error });
       console.log(`${label.file.padEnd(20)} FAILED ${result.error} ${result.detail ?? ''}`);
       console.log(`  → ${explain(`${result.error} ${result.detail ?? ''}`)}\n`);
-      // A refused key or missing model fails the same way for every sample.
-      if (/api.?key|401|403|404|permission|unauth|not found/i.test(result.detail ?? '')) break;
+      // A refused key, schema or model fails the same way for every sample.
+      if (/^4(?!29)\d\d\b/.test(result.detail ?? '')) break;
+      // So does a daily limit: the remaining samples would only fail too.
+      if (/per day/i.test(result.detail ?? '')) break;
       continue;
     }
     const built = buildDraft(result.extraction, catalog);
     const draft = built.aiDraft as unknown as { lines: { productId: string | null; dose: { morning: number; noon: number; night: number } | null }[] };
     const score = scoreSample(label, { aiStatus: built.aiStatus, lines: draft.lines, extraction: result.extraction }, idOf);
-    scores.push({ ...score, latencyMs });
+    scores.push({ ...score, latencyMs, model: result.model });
     console.log(
       `${label.file.padEnd(20)} ${score.aiStatus.padEnd(10)} matched ${score.matched}/${score.expected} · dose ${score.doseCorrect}/${score.expected} · wrong product ${score.wrongProduct} · ${(latencyMs / 1000).toFixed(1)} s`,
     );
@@ -99,6 +109,8 @@ async function main() {
   const latencies = scores.map((s) => s.latencyMs).sort((a, b) => a - b);
   const summary = {
     model: env.GEMINI_MODEL,
+    fallbackModel: env.GEMINI_FALLBACK_MODEL,
+    readsByFallback: scores.filter((s) => s.model !== env.GEMINI_MODEL).length,
     runAt: new Date().toISOString(),
     samplesRead: scores.length,
     failures,
@@ -115,7 +127,7 @@ async function main() {
 
   console.log('\n', summary);
   if (limit === Infinity && scores.length > 0) {
-    writeFileSync(path.join(ROOT, 'docs', 'ai-eval-results.json'), `${JSON.stringify({ summary, scores }, null, 2)}\n`);
+    writeFileSync(RESULTS, `${JSON.stringify({ summary, scores }, null, 2)}\n`);
     console.log('\nSaved to docs/ai-eval-results.json');
   }
   if (scores.length === 0) process.exitCode = 1;

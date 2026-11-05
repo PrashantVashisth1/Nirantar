@@ -45,6 +45,8 @@ const fieldSchema = (type: string, extra: object = {}) => ({
   additionalProperties: false,
 });
 
+// Kept simple on purpose: Gemini refuses schemas it finds too complex ("too many
+// states"), which a limit like maxItems triggers. The limits live in the Zod check above.
 export const EXTRACTION_JSON_SCHEMA = {
   type: 'object',
   properties: {
@@ -56,7 +58,6 @@ export const EXTRACTION_JSON_SCHEMA = {
     patientName: fieldSchema('string'),
     items: {
       type: 'array',
-      maxItems: 20,
       items: {
         type: 'object',
         properties: {
@@ -71,7 +72,7 @@ export const EXTRACTION_JSON_SCHEMA = {
         additionalProperties: false,
       },
     },
-    unreadableLineCount: { type: 'integer', minimum: 0 },
+    unreadableLineCount: { type: 'integer' },
   },
   required: ['isPrescription', 'legibility', 'prescriberName', 'prescriberRegNo', 'prescribedOn', 'patientName', 'items', 'unreadableLineCount'],
   additionalProperties: false,

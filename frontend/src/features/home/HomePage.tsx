@@ -21,6 +21,7 @@ import { firstName, formatCalendarDate, greetingKey } from '../../lib/format';
 import { useMe } from '../../lib/session';
 import { ALL_PATIENTS, FamilySheet } from './FamilySheet';
 import { RefillCard } from './RefillCard';
+import { ReminderToggle } from './ReminderToggle';
 
 const PATIENT_KEY = 'nirantar.patient';
 
@@ -196,18 +197,21 @@ export function HomePage() {
                 </h2>
                 <ul className="divide-y divide-line border-y border-line">
                   {view.later.map((refill) => (
-                    <li key={refill.id} className="flex items-baseline justify-between gap-4 py-3">
-                      <span>
-                        <span className="text-body-lg text-ink">{refill.product.displayName}</span>
-                        <span className="block text-caption text-ink-2">
-                          {refill.patient.relation === 'SELF'
-                            ? t('home.forYou')
-                            : t('home.forPatient', { name: refill.patient.fullName })}
+                    <li key={refill.id} className="py-3">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <span>
+                          <span className="text-body-lg text-ink">{refill.product.displayName}</span>
+                          <span className="block text-caption text-ink-2">
+                            {refill.patient.relation === 'SELF'
+                              ? t('home.forYou')
+                              : t('home.forPatient', { name: refill.patient.fullName })}
+                          </span>
                         </span>
-                      </span>
-                      <span className="shrink-0 text-body text-ink-2">
-                        {formatCalendarDate(refill.runOutOn, i18n.language)}
-                      </span>
+                        <span className="shrink-0 text-body text-ink-2">
+                          {formatCalendarDate(refill.runOutOn, i18n.language)}
+                        </span>
+                      </div>
+                      <ReminderToggle refill={refill} />
                     </li>
                   ))}
                 </ul>

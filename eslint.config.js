@@ -50,7 +50,7 @@ export default defineConfig(
   },
   {
     // The seed script reports progress on the console.
-    files: ['backend/prisma/**/*.ts', 'scripts/**/*.cjs'],
+    files: ['backend/prisma/**/*.ts', 'backend/scripts/**/*.ts', 'scripts/**/*.cjs'],
     rules: { 'no-console': 'off' },
   },
   {

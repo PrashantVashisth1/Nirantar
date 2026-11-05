@@ -98,7 +98,8 @@
     "emptyStep3": "Delivered from your nearest store",
     "trySample": "Try with a sample prescription",
     "loadError": "We couldn't load your medicines.",
-    "andMore": "{{first}} and {{count}} more"
+    "andMore": "{{first}} and {{count}} more",
+    "remindMe": "Remind me before this runs out"
   },
   "family": {
     "title": "Who are you ordering for?",
@@ -218,7 +219,13 @@
     "placed": "Order placed. Your pharmacist will check it shortly.",
     "sendAnywayNote": "Or just continue: your pharmacist will look at it and can ask for a new photo.",
     "priceLater": "After the pharmacist checks",
-    "pharmacistWillAdd": "You can continue: your pharmacist will read the prescription and add the medicines. You'll confirm before anything is charged."
+    "pharmacistWillAdd": "You can continue: your pharmacist will read the prescription and add the medicines. You'll confirm before anything is charged.",
+    "sample": {
+      "typed": "Typed prescription",
+      "handwritten": "Handwritten prescription",
+      "blurry": "Blurry photo",
+      "notRx": "Not a prescription"
+    }
   },
   "track": {
     "for": "For {{name}}",

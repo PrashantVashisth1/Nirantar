@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { ButtonLink } from '../../design-system/Button';
 import { cn } from '../../lib/cn';
 import { formatCalendarDate } from '../../lib/format';
+import { ReminderToggle } from './ReminderToggle';
 
 /**
  * The one raised card on Home: medicines a person needs soon, how long they
@@ -110,6 +111,9 @@ function RefillLine({ refill }: { refill: RefillDto }) {
         )}
         {when}
       </p>
+      <div className="mt-1">
+        <ReminderToggle refill={refill} />
+      </div>
     </li>
   );
 }

@@ -7,6 +7,7 @@ import {
   type ProductSummaryDto,
   type WorkspaceDto,
 } from '@nirantar/shared';
+import { RX_VALIDITY_DAYS, addDays, dateOnly, todayIst } from '@nirantar/shared';
 import { ArrowLeft, Minus, Plus, RotateCw, Search, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -37,6 +38,8 @@ interface EditItem {
   /** Where a pre-filled dose came from, shown next to the dose. Cleared when edited. */
   doseNote: string | null;
   aiUnsure?: boolean;
+  /** The customer asked for it, but the AI didn't see it on the prescription. */
+  notOnPrescription?: boolean;
   asNeeded: boolean;
   durationDays: number | null;
   genericOptions: ProductSummaryDto[];
@@ -108,6 +111,7 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
         dose: item.dose ?? aiLine?.dose ?? item.lastFill?.dose ?? null,
         doseNote: item.dose ? null : aiLine?.dose ? 'suggested from the text' : item.lastFill ? 'from the last fill' : null,
         aiUnsure: Boolean(aiLine?.uncertain),
+        notOnPrescription: (draft?.lines.length ?? 0) > 0 && !aiLine,
         asNeeded: item.asNeeded,
         durationDays: item.durationDays ?? aiLine?.durationDays ?? item.lastFill?.durationDays ?? null,
         genericOptions: item.genericOptions,
@@ -119,6 +123,7 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
   const [sheet, setSheet] = useState<'reject' | 'reupload' | 'add' | null>(null);
   const [error, setError] = useState<string>();
 
+  const tooOld = Boolean(details.prescribedOn) && addDays(dateOnly(details.prescribedOn), RX_VALIDITY_DAYS) < todayIst();
   const hasH1 = items.some((i) => i.decision === 'APPROVE' && i.product.schedule === 'H1');
   const changed = items.some(
     (i) => !i.itemId || i.decision === 'REMOVE' || i.offerGenericId || i.product.id !== i.originalProductId || i.quantity !== i.requestedQuantity,
@@ -220,6 +225,7 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
             {data.prescription?.aiStatus === 'UNREADABLE' && <Banner tone="warning" title="The AI found this hard to read. Consider requesting a clearer photo." />}
             {nameMismatch && <Banner tone="warning" title={`Name on the prescription ("${draft!.patientName.value}") may not match the patient (${data.patient.fullName}).`} />}
             {(draft?.unreadableLineCount ?? 0) > 0 && <Banner tone="warning" title={`${draft!.unreadableLineCount} line(s) on the prescription couldn't be read.`} />}
+            {tooOld && <Banner tone="warning" title={`This prescription is older than the ${RX_VALIDITY_DAYS}-day policy, so it can't be approved. Reject it or ask for a new one.`} />}
             {hasH1 && <Banner tone="info" title="H1 medicine: the prescriber's registration number is required for the H1 register." />}
             {data.order.customerNote && <Banner tone="neutral" title={`Customer note: "${data.order.customerNote}"`} />}
             {!data.prescription && <Banner tone="warning" title="No prescription attached." />}
@@ -342,6 +348,13 @@ function ItemBlock({ index, item, editable, onChange, onDrop }: { index: number;
               <span className="ml-2 align-middle">
                 <Pill tone="warning" size="staff">
                   AI unsure
+                </Pill>
+              </span>
+            )}
+            {item.notOnPrescription && (
+              <span className="ml-2 align-middle">
+                <Pill tone="warning" size="staff">
+                  Not found on prescription
                 </Pill>
               </span>
             )}

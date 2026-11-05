@@ -107,4 +107,10 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **Staff screens are separate downloads.** Customers on phones don't load the pharmacist and operations code.
 
+## Before Day 7 · 6 Nov 2026
+
+**A feature audit against the plan's screens found four gaps, now closed.** A reminder switch per medicine, a sample picker (typed, handwritten, blurry, not a prescription) so every AI path can be shown, a "Not found on prescription" marker, and an alert for prescriptions past the 180-day policy.
+
+**`npm run ai:eval` scores the reader on labelled synthetic samples.** It counts lines matched to the exact product, correct doses, wrong products selected, and whether a blurry or non-prescription photo ever comes back as a confident read. A test feeds a perfect transcription through the same scoring, so a lower real score points at the reader rather than our matcher.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

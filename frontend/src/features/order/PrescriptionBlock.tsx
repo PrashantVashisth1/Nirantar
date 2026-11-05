@@ -5,11 +5,20 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Banner } from '../../design-system/Banner';
 import { Button } from '../../design-system/Button';
+import { Sheet } from '../../design-system/Sheet';
 import { Spinner } from '../../design-system/Spinner';
 import { api } from '../../lib/api';
 import { useAppConfig } from '../../lib/config';
 import { errorMessage } from '../../lib/errors';
 import { sampleFile, uploadPrescription } from '../../lib/upload';
+
+/** Synthetic samples, one for each thing the AI can do with a photo. */
+const SAMPLES = [
+  { key: 'typed', file: 'rx-typed' },
+  { key: 'handwritten', file: 'rx-handwritten' },
+  { key: 'blurry', file: 'rx-blurry' },
+  { key: 'notRx', file: 'not-a-prescription' },
+] as const;
 
 export interface OnFile {
   id: string;
@@ -42,6 +51,7 @@ export function PrescriptionBlock({
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [samplesOpen, setSamplesOpen] = useState(false);
   const [error, setError] = useState<string>();
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [slow, setSlow] = useState(false);
@@ -227,7 +237,7 @@ export function PrescriptionBlock({
           <button
             type="button"
             className="font-semibold underline"
-            onClick={() => void sampleFile().then(send)}
+            onClick={() => setSamplesOpen(true)}
           >
             {t('order.useSample')}
           </button>
@@ -235,6 +245,23 @@ export function PrescriptionBlock({
       )}
       {error && <Banner tone="danger" title={error} />}
       {pickers}
+      <Sheet open={samplesOpen} onOpenChange={setSamplesOpen} title={t('order.useSample')}>
+        <div className="flex flex-col gap-2">
+          {SAMPLES.map((sample) => (
+            <Button
+              key={sample.file}
+              variant="secondary"
+              fullWidth
+              onClick={() => {
+                setSamplesOpen(false);
+                void sampleFile(sample.file).then(send);
+              }}
+            >
+              {t(`order.sample.${sample.key}`)}
+            </Button>
+          ))}
+        </div>
+      </Sheet>
     </div>
   );
 }

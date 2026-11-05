@@ -19,6 +19,7 @@
     "format": "prettier --write .",
     "test": "npm run test --workspaces --if-present",
     "e2e": "playwright test",
+    "ai:eval": "npm run ai:eval -w backend --",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate -w backend",

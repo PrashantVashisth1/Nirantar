@@ -4,10 +4,12 @@
  */
 import { addDays, dateOnly, todayIst } from '@nirantar/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createApp } from '../src/app';
 import { prisma } from '../src/lib/db';
 import { applyStockImport, previewStockImport } from '../src/services/inventory/stock-import.service';
 import { runReminders } from '../src/services/refills/reminder.service';
 import { routeOrder } from '../src/services/routing/routing.service';
+import { randomPhone, signInCustomer } from './helpers/auth';
 import { createCustomer, createOrder, createPharmacist, createProduct, createStore, resetDb } from './helpers/factory';
 
 beforeEach(resetDb);
@@ -174,6 +176,22 @@ describe('refill reminders (T13, T14)', () => {
     });
     return { customer, product, sub };
   }
+
+  it('sends nothing once the customer turns reminders off for that medicine, and others can\'t change it', async () => {
+    const { customer, sub } = await subscription(5);
+    const server = createApp().listen(0);
+    try {
+      const stranger = await createCustomer(randomPhone());
+      await (await signInCustomer(server, stranger.user.phone!)).patch(`/api/refills/${sub.id}`).send({ remindersEnabled: false }).expect(404);
+
+      const owner = await signInCustomer(server, customer.user.phone!);
+      await owner.patch(`/api/refills/${sub.id}`).send({ remindersEnabled: false }).expect(204);
+      await runReminders();
+      expect(await prisma.message.count({ where: { accountId: customer.user.id } })).toBe(0);
+    } finally {
+      server.close();
+    }
+  });
 
   it('sends one message per due reminder, however many times the job runs', async () => {
     const { customer } = await subscription(5);

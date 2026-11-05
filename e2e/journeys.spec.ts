@@ -19,6 +19,7 @@ test('E1: a customer at 360 px uploads a prescription and places an order', asyn
   await page.getByRole('link', { name: 'Upload a prescription' }).click();
   await expect(page.getByRole('heading', { name: 'New order' })).toBeVisible();
   await page.getByRole('button', { name: 'Use a sample prescription' }).click();
+  await page.getByRole('button', { name: 'Typed prescription' }).click();
 
   // The AI is off in this run, so the customer is told the pharmacist will read it.
   await expect(page.getByText('your pharmacist will read the prescription', { exact: false }).first()).toBeVisible();

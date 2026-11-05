@@ -29,6 +29,7 @@ import {
 import { AppError } from '../../lib/errors';
 import { Router } from 'express';
 import { z } from 'zod';
+import { notFound } from '../../lib/errors';
 import { NewPatientSchema } from '@nirantar/shared';
 import {
   addPatient,
@@ -114,6 +115,19 @@ customerRouter.post('/prescriptions', ...customerOnly, upload.single('file'), as
 
 customerRouter.get('/prescriptions/:id', ...customerOnly, async (req, res) => {
   res.json(await getPrescriptionForCustomer(currentUser(req).id, parseId(req.params.id)));
+});
+
+const RefillSettingsSchema = z.object({ remindersEnabled: z.boolean() }).strict();
+
+customerRouter.patch('/refills/:id', ...customerOnly, async (req, res) => {
+  const { remindersEnabled } = parse(RefillSettingsSchema, req.body);
+  // Scoped to the account: someone else's refill looks like it doesn't exist.
+  const updated = await prisma.refillSubscription.updateMany({
+    where: { id: parseId(req.params.id), accountId: currentUser(req).id },
+    data: { remindersEnabled },
+  });
+  if (updated.count === 0) throw notFound("We couldn't find that medicine.");
+  res.status(204).end();
 });
 
 customerRouter.get('/refills/reorder', ...customerOnly, async (req, res) => {

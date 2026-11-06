@@ -125,4 +125,6 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **Testing against the real AI found two more UI bugs.** "Take the photo again" cleared the photo first, which unmounted the file input while the chooser was open, so the chosen file was silently lost; the photo now stays until a new one is chosen. And Retry AI existed on the server with no button; it's now in the workspace, the draft appears without a reload, and it only fills empty fields so nothing the pharmacist typed is overwritten.
 
+**On a blurred photo the model invented medicines.** The fallback model returned "Tab Pyrexia 80 mg" and "Dr. R. Adam" from an unreadable image, at medium confidence, while the eval's score stayed clean because nothing matched our catalog. That's the real safety argument for matching in our own code: an invented name can't become a product unless it happens to match, and a pharmacist still reviews it. Three changes: the prompt forbids plausible guesses, a low-confidence name never selects a product, and a hard-to-read photo with no match asks the customer for a new photo.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

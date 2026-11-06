@@ -124,7 +124,10 @@ export async function readPrescription(prescriptionId: string) {
 /** Turns what the AI transcribed into a catalog-matched draft and a status. */
 export function buildDraft(extraction: Extraction, catalog: CatalogProduct[]) {
   const lines: StoredDraft['lines'] = extraction.items.map((item, lineIndex) => {
-    const match = matchLine(item.medicineName.value, item.strength.value, catalog);
+    const found = matchLine(item.medicineName.value, item.strength.value, catalog);
+    // A name the AI itself doubts never selects a product: models can invent a
+    // believable word on a poor photo. The pharmacist still sees the candidates.
+    const match = item.medicineName.confidence === 'low' ? { ...found, quality: 'NONE' as const, productId: null } : found;
     const dose = parseDose(item.dosageText.value);
     const durationDays = parseDurationDays(item.durationText.value);
     const product = catalog.find((p) => p.id === match.productId);
@@ -147,8 +150,11 @@ export function buildDraft(extraction: Extraction, catalog: CatalogProduct[]) {
   const uncertain = extraction.items.some((item) =>
     [item.medicineName, item.strength, item.dosageText].some((f) => f.confidence !== 'high' || f.value === null),
   );
+  // Hard to read, and nothing on it matches our catalog: ask for a better photo
+  // rather than treating whatever the AI thought it saw as a usable read.
+  const poorRead = extraction.legibility !== 'clear' && lines.every((l) => l.productId === null);
   const aiStatus =
-    !extraction.isPrescription || extraction.legibility === 'illegible' || extraction.items.length === 0
+    !extraction.isPrescription || extraction.legibility === 'illegible' || extraction.items.length === 0 || poorRead
       ? 'UNREADABLE'
       : extraction.legibility === 'clear' && !uncertain && extraction.unreadableLineCount === 0 && lines.every((l) => l.quality === 'STRONG')
         ? 'READY'

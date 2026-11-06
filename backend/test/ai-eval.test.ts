@@ -44,6 +44,33 @@ function scorePerfect(label: EvalLabel) {
   return scoreSample(label, { aiStatus: built.aiStatus, lines: draft.lines, extraction }, (sku) => sku);
 }
 
+describe('reads of poor photos', () => {
+  const statusOf = (legibility: Extraction['legibility'], name: string, confidence: 'high' | 'medium' | 'low') => {
+    const extraction: Extraction = {
+      ...perfectRead(EVAL_LABELS.find((l) => l.file === 'rx-debasish')!),
+      legibility,
+    };
+    extraction.items[0] = { ...extraction.items[0]!, medicineName: { value: name, confidence } };
+    const built = buildDraft(extraction, catalog);
+    return { status: built.aiStatus, line: (built.aiDraft as unknown as { lines: { productId: string | null; candidateIds: string[] }[] }).lines[0]! };
+  };
+
+  // Seen on a real blurred photo: the model returned a medicine that isn't on the paper.
+  it('asks for a new photo when a hard-to-read photo matches nothing', () => {
+    expect(statusOf('partly_legible', 'Pyrexia', 'medium').status).toBe('UNREADABLE');
+  });
+
+  it('keeps a clear photo of a medicine we do not stock for the pharmacist, not for a retake', () => {
+    expect(statusOf('clear', 'Pyrexia', 'high').status).toBe('UNSURE');
+  });
+
+  it('never selects a product from a name the AI itself doubts, but still lists it', () => {
+    const { line } = statusOf('partly_legible', 'Amlora', 'low');
+    expect(line.productId).toBeNull();
+    expect(line.candidateIds).toContain('AML5-S10');
+  });
+});
+
 describe('AI evaluation labels', () => {
   it.each(EVAL_LABELS.filter((l) => l.lines.length > 0).map((l) => [l.file, l] as const))(
     '%s: a perfect read matches every medicine and dose',

@@ -1,7 +1,7 @@
 /**
  * Indian mobile numbers: 10 digits starting with 6, 7, 8 or 9.
- * Accepts what people actually type ("98300 12345", "+91 98300-12345",
- * "098300 12345") and stores one canonical form: "+919830012345".
+ * Accepts what people actually type ("90000 12345", "+91 90000-12345",
+ * "090000 12345") and stores one canonical form: "+919000012345".
  */
 export function normalizeIndianMobile(input: string): string | null {
   let digits = input.replace(/[\s\-().]/g, '');

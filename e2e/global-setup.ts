@@ -1,6 +1,9 @@
 import { execSync } from 'node:child_process';
+import { DATABASE_URL } from './config';
 
-/** Every run starts from the same demo world. Refuses to run in production (see the seed). */
+/** Every run starts from the same demo world, in the E2E database. */
 export default function globalSetup() {
-  execSync('npm run db:seed', { stdio: 'inherit' });
+  const env = { ...process.env, DATABASE_URL };
+  execSync('npx prisma migrate deploy', { cwd: 'backend', stdio: 'pipe', env });
+  execSync('npm run db:seed', { stdio: 'inherit', env });
 }

@@ -11,6 +11,7 @@ import path from 'node:path';
 import { lineTotalPaise } from '@nirantar/shared';
 import { encrypt } from '../../src/lib/crypto';
 import { prisma } from '../../src/lib/db';
+import { orderMessages, type OrderMessage } from '../../src/services/orders/order-messages';
 import { buildDraft, loadCatalog } from '../../src/services/prescriptions/prescription.service';
 import type { Extraction } from '../../src/services/ai/extraction';
 import type { OrderStatus, Prisma, Schedule } from '../../src/generated/prisma/client';
@@ -343,15 +344,16 @@ export async function createSeedOrder(spec: SeedOrder, ctx: SeedContext): Promis
   }
 
   // ── What the customer's test inbox would have received ──
-  const lastMessage: Partial<Record<OrderStatus, string>> = {
-    AWAITING_CUSTOMER: `Your pharmacist checked order ${spec.number} and suggested changes. Please open the app to confirm.`,
-    REJECTED: `Order ${spec.number} couldn't be approved. Please open the app to see why and what to do next.`,
-    ASSIGNED: `Your pharmacist approved order ${spec.number}. It's being prepared at ${storeName} store.`,
-    PICKING: `Your pharmacist approved order ${spec.number}. It's being prepared at ${storeName} store.`,
-    OUT_FOR_DELIVERY: `Order ${spec.number} is on the way with ${spec.rider ?? 'Bapi Das'}.`,
-    DELIVERED: `Order ${spec.number} has been delivered.`,
+  const { locale } = await prisma.user.findUniqueOrThrow({ where: { id: accountId }, select: { locale: true } });
+  const lastMessage: Partial<Record<OrderStatus, OrderMessage>> = {
+    AWAITING_CUSTOMER: orderMessages.changes(spec.number),
+    REJECTED: orderMessages.rejected(spec.number),
+    ASSIGNED: orderMessages.approved(spec.number),
+    PICKING: orderMessages.approved(spec.number),
+    OUT_FOR_DELIVERY: orderMessages.onTheWay(spec.number, spec.rider ?? 'Bapi Das'),
+    DELIVERED: orderMessages.delivered(spec.number),
   };
-  const body = lastMessage[spec.status];
+  const body = lastMessage[spec.status]?.[locale];
   if (body) {
     await prisma.message.create({
       data: { accountId, orderId: order.id, channel: 'SMS', body: `Nirantar (test): ${body}`, createdAt: finalStep >= 3 ? stepAt(finalStep) : (verifiedAt ?? placedAt) },

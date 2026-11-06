@@ -15,7 +15,9 @@ const TRANSLATED_CODES = new Set([
 export function errorMessage(error: unknown, t: TFunction): string {
   if (error instanceof ApiError) {
     if (TRANSLATED_CODES.has(error.code)) return t(`errors.${error.code}`);
-    return error.message;
+    // Hindi and Bengali have their own text for these codes; English uses the
+    // server's message, which is more specific.
+    return t(`serverErrors.${error.code}`, { defaultValue: error.message });
   }
   return t('common.genericError');
 }

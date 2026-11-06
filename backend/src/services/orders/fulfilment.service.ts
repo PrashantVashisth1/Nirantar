@@ -10,6 +10,7 @@ import { prisma } from '../../lib/db';
 import { AppError, notFound } from '../../lib/errors';
 import { toProductSummary } from '../../http/presenters/order.presenter';
 import { claimVersion, notify, recordEvent } from './order-helpers';
+import { orderMessages } from './order-messages';
 import type { OrderStatus } from '../../generated/prisma/client';
 
 const TABS: Record<string, OrderStatus[]> = {
@@ -129,7 +130,7 @@ export async function handOver(user: { id: string; storeId: string }, orderId: s
     }
     await tx.order.update({ where: { id: order.id }, data: { status: 'OUT_FOR_DELIVERY', riderName } });
     await recordEvent(tx, { orderId: order.id, from: 'PACKED', to: 'OUT_FOR_DELIVERY', actorId: user.id, actorRole: 'PHARMACIST', note: `Handed to ${riderName}` });
-    await notify(tx, order.accountId, order.id, `Order ${order.number} is on the way with ${riderName}.`);
+    await notify(tx, order.accountId, order.id, orderMessages.onTheWay(order.number, riderName));
   });
 }
 
@@ -177,6 +178,6 @@ export async function markDelivered(user: { id: string; storeId: string }, order
         }
       }
     }
-    await notify(tx, order.accountId, order.id, `Order ${order.number} has been delivered.`);
+    await notify(tx, order.accountId, order.id, orderMessages.delivered(order.number));
   });
 }

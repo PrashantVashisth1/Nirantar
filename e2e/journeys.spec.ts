@@ -143,7 +143,18 @@ test('E5: a new stock file routes the order waiting for stock; safety line and H
   const { context, page } = await signInStaff(browser, OPS);
 
   await expect(page.getByText('H/H1 items dispatched without approval: 0')).toBeVisible();
-  await expect(page.getByText('RX-50227')).toBeVisible();
+  await expect(page.getByText('RX-50227').first()).toBeVisible();
+
+  // One view of orders across all stores, with filters.
+  await expect(page.getByRole('heading', { name: 'All orders' })).toBeVisible();
+  await page.getByLabel('Filter by store').selectOption({ label: 'Salt Lake' });
+  await expect(page.getByRole('cell', { name: 'RX-50211' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'RX-50214' })).toHaveCount(0);
+  await page.getByLabel('Filter by store').selectOption({ label: 'All stores' });
+
+  // Retrying with no stock anywhere leaves the order waiting, and says nothing false.
+  await page.getByRole('button', { name: 'Retry routing' }).click();
+  await expect(page.getByRole('button', { name: 'Retry routing' })).toBeVisible();
 
   await page.getByRole('tab', { name: 'Stock' }).click();
   await page.locator('input[type=file]').setInputFiles('docs/demo/stock-with-errors.csv');

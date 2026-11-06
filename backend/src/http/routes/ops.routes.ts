@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { dateOnly, todayIst } from '@nirantar/shared';
+import { ORDER_STATUSES, dateOnly, todayIst } from '@nirantar/shared';
 import { seedDemoWorld } from '../../../prisma/seed/world';
 import { isDemoMode } from '../../config/env';
 import { prisma } from '../../lib/db';
@@ -122,6 +122,26 @@ opsRouter.get('/rules', async (_req, res) => {
 
 opsRouter.get('/h1-register', async (_req, res) => {
   res.json(await getH1Register());
+});
+
+// The client's "one view of orders across all stores". No patient names: operations
+// doesn't need them here, so health data stays with the people checking the order.
+const OrdersQuery = z.object({ storeId: z.uuid().optional(), status: z.enum(ORDER_STATUSES).optional() });
+
+opsRouter.get('/orders', async (req, res) => {
+  const { storeId, status } = parse(OrdersQuery, req.query);
+  const where = { ...(storeId ? { storeId } : {}), ...(status ? { status } : {}) };
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({ where, include: orderSummaryInclude, orderBy: { placedAt: 'desc' }, take: 50 }),
+    prisma.order.count({ where }),
+  ]);
+  res.json({
+    total,
+    orders: orders.map((order) => {
+      const { patient: _patient, ...summary } = toOrderSummary(order);
+      return summary;
+    }),
+  });
 });
 
 // ── Reset demo: test mode only; in production this route doesn't exist ──

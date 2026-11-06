@@ -5,6 +5,7 @@ import i18n from '../../i18n';
 import { tableClasses as tc } from '../../layouts/StaffLayout';
 import { api } from '../../lib/api';
 import { errorMessage } from '../../lib/errors';
+import { AllOrders } from './AllOrders';
 import { WaitingOrders } from './StockTab';
 
 interface Overview {
@@ -159,6 +160,8 @@ export function OverviewTab() {
       </div>
 
       <WaitingOrders />
+
+      <AllOrders />
     </div>
   );
 }

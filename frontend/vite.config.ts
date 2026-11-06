@@ -10,7 +10,8 @@ export default defineConfig({
     // to Express. Production does the same thing through a Vercel rewrite, so
     // the app always talks to its own origin and the session cookie stays first-party.
     proxy: {
-      '/api': 'http://localhost:4000',
+      // E2E points this at its own backend.
+      '/api': process.env.API_PROXY_TARGET ?? 'http://localhost:4000',
     },
   },
 });

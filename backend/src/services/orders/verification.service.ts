@@ -18,6 +18,7 @@ import type { ApproveOrderSchema, RejectOrderSchema, ReuploadRequestSchema } fro
 import { prisma } from '../../lib/db';
 import { AppError, notFound, ruleViolation } from '../../lib/errors';
 import { orderSummaryInclude, toOrderSummary, toProductSummary } from '../../http/presenters/order.presenter';
+import { orderMessages } from './order-messages';
 import { recoverStaleReads, toPrescriptionDto } from '../prescriptions/prescription.service';
 import { routeOrder, type RoutingResult } from '../routing/routing.service';
 import { ageFrom, claimVersion, notify, recordEvent } from './order-helpers';
@@ -324,9 +325,7 @@ export async function approveOrder(
       tx,
       order.accountId,
       order.id,
-      changed
-        ? `Your pharmacist checked order ${order.number} and suggested changes. Please open the app to confirm.`
-        : `Your pharmacist approved order ${order.number}.`,
+      changed ? orderMessages.changes(order.number) : orderMessages.approved(order.number),
     );
   });
 
@@ -348,7 +347,7 @@ export async function rejectOrder(pharmacist: Pharmacist, orderId: string, input
       await tx.prescription.update({ where: { id: order.prescriptionId }, data: { reviewStatus: 'REJECTED' } });
     }
     await recordEvent(tx, { orderId: order.id, from: order.status, to: 'REJECTED', actorId: pharmacist.id, actorRole: 'PHARMACIST', note: input.note ?? input.reason });
-    await notify(tx, order.accountId, order.id, `Order ${order.number} couldn't be approved. Please open the app to see why and what to do next.`);
+    await notify(tx, order.accountId, order.id, orderMessages.rejected(order.number));
   });
 }
 
@@ -360,6 +359,6 @@ export async function requestReupload(pharmacist: Pharmacist, orderId: string, i
     await tx.order.update({ where: { id: order.id }, data: { status: 'ON_HOLD_REUPLOAD', reuploadReason: input.reason, reviewingById: null } });
     if (order.prescriptionId) await tx.prescription.update({ where: { id: order.prescriptionId }, data: { reviewStatus: 'REUPLOAD_ASKED' } });
     await recordEvent(tx, { orderId: order.id, from: 'AWAITING_PHARMACIST', to: 'ON_HOLD_REUPLOAD', actorId: pharmacist.id, actorRole: 'PHARMACIST', note: input.note ?? input.reason });
-    await notify(tx, order.accountId, order.id, `We need a clearer photo of your prescription for order ${order.number}. Please open the app to upload it again.`);
+    await notify(tx, order.accountId, order.id, orderMessages.reupload(order.number));
   });
 }

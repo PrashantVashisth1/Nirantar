@@ -5,8 +5,11 @@ import { defineConfig, devices } from '@playwright/test';
  * The AI is switched off so results never depend on an outside service; that
  * also exercises the manual path, which has to work on its own (plan §8).
  *
- * The local demo data is reset first (see e2e/global-setup.ts).
+ * Runs on its own ports and its own database (see e2e/config.ts), so it never
+ * touches the demo data, and the dev servers can keep running alongside it.
  */
+import { API_PORT, DATABASE_URL, WEB_PORT } from './e2e/config';
+
 export default defineConfig({
   testDir: './e2e',
   globalSetup: './e2e/global-setup.ts',
@@ -17,7 +20,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: `http://localhost:${WEB_PORT}`,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     ...devices['Desktop Chrome'],
@@ -28,15 +31,21 @@ export default defineConfig({
       // Not `npm run dev`: tsx's watch mode doesn't start without a terminal.
       command: 'npx tsx --env-file=.env src/server.ts',
       cwd: 'backend',
-      url: 'http://localhost:4000/api/health',
-      env: { GEMINI_API_KEY: 'off' },
+      url: `http://localhost:${API_PORT}/api/health`,
+      env: {
+        GEMINI_API_KEY: 'off',
+        DATABASE_URL,
+        PORT: String(API_PORT),
+        APP_ORIGIN: `http://localhost:${WEB_PORT}`,
+      },
       reuseExistingServer: false,
       stdout: 'pipe',
       timeout: 60_000,
     },
     {
-      command: 'npm run dev -w frontend',
-      url: 'http://localhost:5173',
+      command: `npm run dev -w frontend -- --port ${WEB_PORT} --strictPort`,
+      url: `http://localhost:${WEB_PORT}`,
+      env: { API_PROXY_TARGET: `http://localhost:${API_PORT}` },
       reuseExistingServer: false,
       stdout: 'pipe',
       timeout: 60_000,

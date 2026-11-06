@@ -1,5 +1,6 @@
 import type { OrderStatus } from '@nirantar/shared';
 import { conflict } from '../../lib/errors';
+import type { OrderMessage } from './order-messages';
 import type { Prisma } from '../../generated/prisma/client';
 
 type Tx = Prisma.TransactionClient;
@@ -27,8 +28,9 @@ export function recordEvent(
 }
 
 /** Test-mode outbox: the message the customer would get by SMS/WhatsApp (plan A14). */
-export function notify(tx: Tx, accountId: string, orderId: string, body: string) {
-  return tx.message.create({ data: { accountId, orderId, channel: 'SMS', body: `Nirantar (test): ${body}` } });
+export async function notify(tx: Tx, accountId: string, orderId: string, message: OrderMessage) {
+  const { locale } = await tx.user.findUniqueOrThrow({ where: { id: accountId }, select: { locale: true } });
+  return tx.message.create({ data: { accountId, orderId, channel: 'SMS', body: `Nirantar (test): ${message[locale]}` } });
 }
 
 export function ageFrom(birthYear: number | null, now = new Date()): number | null {

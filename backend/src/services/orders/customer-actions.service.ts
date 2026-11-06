@@ -12,6 +12,7 @@ import { AppError, notFound, ruleViolation } from '../../lib/errors';
 import { uploadPrescription } from '../prescriptions/prescription.service';
 import { releaseReservation, routeOrder } from '../routing/routing.service';
 import { claimVersion, notify, recordEvent } from './order-helpers';
+import { orderMessages } from './order-messages';
 
 async function ownOrder(accountId: string, orderId: string) {
   const order = await prisma.order.findFirst({
@@ -110,7 +111,7 @@ export async function payTest(accountId: string, orderId: string, outcome: 'SUCC
   const paid = outcome === 'SUCCESS';
   await prisma.$transaction(async (tx) => {
     await tx.order.update({ where: { id: order.id }, data: { paymentStatus: paid ? 'PAID' : 'FAILED', version: { increment: 1 } } });
-    await notify(tx, accountId, order.id, paid ? `Payment received for order ${order.number}. Thank you.` : `The UPI payment for order ${order.number} didn't go through. You can try again or pay cash on delivery.`);
+    await notify(tx, accountId, order.id, paid ? orderMessages.paid(order.number) : orderMessages.paymentFailed(order.number));
   });
   return { paymentStatus: paid ? 'PAID' : 'FAILED' };
 }

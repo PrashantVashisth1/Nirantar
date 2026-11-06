@@ -127,4 +127,8 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **On a blurred photo the model invented medicines.** The fallback model returned "Tab Pyrexia 80 mg" and "Dr. R. Adam" from an unreadable image, at medium confidence, while the eval's score stayed clean because nothing matched our catalog. That's the real safety argument for matching in our own code: an invented name can't become a product unless it happens to match, and a pharmacist still reviews it. Three changes: the prompt forbids plausible guesses, a low-confidence name never selects a product, and a hard-to-read photo with no match asks the customer for a new photo.
 
+**Checked against the brief line by line, three gaps closed.** The MD asked for "one view of orders across all 46 stores" and the dashboard only showed counts, so Overview now lists orders with store and status filters (no patient names: operations doesn't need them). Order messages and server errors were English even on Hindi and Bengali accounts; both now follow the account's language. A test phone number that could have belonged to a real person was replaced with a fictional one.
+
+**E2E has its own database and ports.** It used to reseed the demo data and needed the dev servers stopped. Now it can run while someone is testing the app.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

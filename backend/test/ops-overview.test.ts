@@ -71,6 +71,32 @@ describe('GET /ops/overview', () => {
   });
 });
 
+describe('GET /ops/orders', () => {
+  it('lists orders across stores, filters them, and leaves patient names out', async () => {
+    const first = await createStore('AAA');
+    const second = await createStore('BBB');
+    const product = await createProduct('OTC');
+    const customer = await createCustomer(randomPhone());
+    await createOrder({ customer, status: 'ASSIGNED', storeId: first.id, items: [{ productId: product.id }] });
+    await createOrder({ customer, status: 'ASSIGNED', storeId: second.id, items: [{ productId: product.id }] });
+    await createOrder({ customer, status: 'AWAITING_PHARMACIST', items: [{ productId: product.id }] });
+
+    const agent = await opsAgent();
+    expect((await agent.get('/api/ops/orders').expect(200)).body.total).toBe(3);
+    const byStore = await agent.get(`/api/ops/orders?storeId=${first.id}`).expect(200);
+    expect(byStore.body.orders).toHaveLength(1);
+    expect(byStore.body.orders[0]).not.toHaveProperty('patient');
+    expect((await agent.get('/api/ops/orders?status=AWAITING_PHARMACIST').expect(200)).body.total).toBe(1);
+    await agent.get('/api/ops/orders?status=NOPE').expect(400);
+  });
+
+  it('is closed to customers', async () => {
+    const phone = randomPhone();
+    await createCustomer(phone);
+    await (await signInCustomer(server, phone)).get('/api/ops/orders').expect(403);
+  });
+});
+
 describe('POST /ops/demo/reset', () => {
   const original = env.APP_ENV;
   afterEach(() => {

@@ -4,13 +4,13 @@ import { maskPhone, normalizeIndianMobile } from './phone';
 
 describe('Indian mobile numbers', () => {
   it('accepts the formats people actually type', () => {
-    for (const input of ['9830012345', '98300 12345', '+91 98300-12345', '919830012345', '09830012345']) {
-      expect(normalizeIndianMobile(input)).toBe('+919830012345');
+    for (const input of ['9000012345', '90000 12345', '+91 90000-12345', '919000012345', '09000012345']) {
+      expect(normalizeIndianMobile(input)).toBe('+919000012345');
     }
   });
 
   it('rejects numbers that are not Indian mobiles', () => {
-    for (const input of ['12345', '5830012345', '98300123456', 'abcdefghij', '']) {
+    for (const input of ['12345', '5830012345', '90000123456', 'abcdefghij', '']) {
       expect(normalizeIndianMobile(input)).toBeNull();
     }
   });

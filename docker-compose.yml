@@ -1,5 +1,6 @@
 # Local PostgreSQL for development and tests.
-# Port 5433 on the host avoids clashing with any Postgres already installed on 5432.
+# Port 15433 on the host avoids any Postgres already on 5432, and the 5414-6013 range
+# that Windows (Hyper-V) can reserve at boot, which blocked 5433 on the dev machine.
 services:
   db:
     image: postgres:16-alpine
@@ -9,7 +10,7 @@ services:
       POSTGRES_PASSWORD: nirantar_local_only
       POSTGRES_DB: nirantar
     ports:
-      - '5433:5432'
+      - '15433:5432'
     volumes:
       - nirantar-db-data:/var/lib/postgresql/data
     healthcheck:

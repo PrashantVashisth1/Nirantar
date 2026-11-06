@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { PrescriptionDto } from '@nirantar/shared';
 import { Camera, CheckCircle2, ImageUp } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Banner } from '../../design-system/Banner';
 import { Button } from '../../design-system/Button';
@@ -100,6 +100,13 @@ export function PrescriptionBlock({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSample, patientId]);
 
+  function onPicked(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Cleared so choosing the same file again still counts as a change.
+    event.target.value = '';
+    if (file) void send(file);
+  }
+
   const pickers = (
     <>
       <input
@@ -108,14 +115,14 @@ export function PrescriptionBlock({
         accept="image/*"
         capture="environment"
         className="sr-only"
-        onChange={(e) => e.target.files?.[0] && void send(e.target.files[0])}
+        onChange={onPicked}
       />
       <input
         ref={gallery}
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="sr-only"
-        onChange={(e) => e.target.files?.[0] && void send(e.target.files[0])}
+        onChange={onPicked}
       />
     </>
   );
@@ -189,10 +196,9 @@ export function PrescriptionBlock({
               <Button
                 variant="secondary"
                 size="lg"
-                onClick={() => {
-                  onClear();
-                  camera.current?.click();
-                }}
+                // The current photo stays until a new one is chosen. Clearing first would
+                // unmount this input while the file chooser is open, and the file would be lost.
+                onClick={() => camera.current?.click()}
               >
                 {t('order.retake')}
               </Button>
@@ -200,6 +206,7 @@ export function PrescriptionBlock({
             <p className="mt-2 text-caption text-ink-2">{t('order.sendAnywayNote')}</p>
           </Banner>
         )}
+        {error && <Banner tone="danger" title={error} />}
         {pickers}
       </div>
     );

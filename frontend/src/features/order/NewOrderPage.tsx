@@ -251,7 +251,10 @@ export function NewOrderPage() {
               </p>
             )}
             {cart.length === 0 ? (
-              <p className="py-3 text-body text-ink-2">{prescriptionId ? t('order.pharmacistWillAdd') : t('order.emptyCart')}</p>
+              // An unreadable photo already says what happens next, in its own banner.
+              prescription?.aiStatus !== 'UNREADABLE' && (
+                <p className="py-3 text-body text-ink-2">{prescriptionId ? t('order.pharmacistWillAdd') : t('order.emptyCart')}</p>
+              )
             ) : (
               <ul className="divide-y divide-line border-y border-line">
                 {cart.map((line) => (
@@ -270,7 +273,7 @@ export function NewOrderPage() {
                 ))}
               </ul>
             )}
-            {unmatched > 0 && (
+            {unmatched > 0 && prescription?.aiStatus !== 'UNREADABLE' && (
               <p className="mt-3 text-body text-ink-2">
                 {t('order.unmatched', { count: unmatched })}
               </p>

@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 // CI provides DATABASE_URL for a fresh Postgres service.
 const testDatabaseUrl =
   process.env.DATABASE_URL ??
-  'postgresql://nirantar:nirantar_local_only@localhost:5433/nirantar_test';
+  'postgresql://nirantar:nirantar_local_only@localhost:15433/nirantar_test';
 
 export default defineConfig({
   test: {

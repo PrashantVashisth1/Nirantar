@@ -1,5 +1,6 @@
 import type { RefillDto } from '@nirantar/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../lib/api';
 
@@ -7,11 +8,15 @@ import { api } from '../../lib/api';
 export function ReminderToggle({ refill }: { refill: RefillDto }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  // Held locally until the fresh data arrives, so the box never flicks back mid-save.
+  const [choice, setChoice] = useState<boolean | null>(null);
   const save = useMutation({
     mutationFn: (remindersEnabled: boolean) => api.patch(`/refills/${refill.id}`, { remindersEnabled }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['home'] }),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['home'] });
+      setChoice(null);
+    },
   });
-  const checked = save.isPending ? save.variables : refill.remindersEnabled;
 
   return (
     <div>
@@ -19,8 +24,11 @@ export function ReminderToggle({ refill }: { refill: RefillDto }) {
         <input
           type="checkbox"
           className="size-5 shrink-0 accent-pine"
-          checked={checked}
-          onChange={(e) => save.mutate(e.target.checked)}
+          checked={choice ?? refill.remindersEnabled}
+          onChange={(e) => {
+            setChoice(e.target.checked);
+            save.mutate(e.target.checked);
+          }}
         />
         {t('home.remindMe')}
       </label>

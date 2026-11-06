@@ -54,7 +54,12 @@ export function WorkspacePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const ws = useQuery({ queryKey: ['workspace', id], queryFn: () => api.get<WorkspaceDto>(`/pharmacist/orders/${id}`) });
+  const ws = useQuery({
+    queryKey: ['workspace', id],
+    queryFn: () => api.get<WorkspaceDto>(`/pharmacist/orders/${id}`),
+    // Watch for the draft while the AI is reading (first read, or after Retry AI).
+    refetchInterval: (query) => (query.state.data?.prescription?.aiStatus === 'READING' ? 2_500 : false),
+  });
 
   if (ws.isLoading) {
     return (
@@ -66,7 +71,8 @@ export function WorkspacePage() {
       </StaffLayout>
     );
   }
-  if (ws.isError || !ws.data) {
+  // A failed background refresh keeps the screen, so the pharmacist's edits aren't lost.
+  if (!ws.data) {
     return (
       <StaffLayout>
         <ErrorState message={errorMessage(ws.error, t)} onRetry={() => void ws.refetch()} />
@@ -122,6 +128,43 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
   const [confirmed, setConfirmed] = useState(false);
   const [sheet, setSheet] = useState<'reject' | 'reupload' | 'add' | null>(null);
   const [error, setError] = useState<string>();
+
+  // When a draft arrives after the screen opened, fill only what's still empty:
+  // anything the pharmacist already typed stays.
+  useEffect(() => {
+    if (!draft) return;
+    setDetails((d) => ({
+      prescriberName: d.prescriberName || (draft.prescriberName.value ?? ''),
+      prescriberRegNo: d.prescriberRegNo || (draft.prescriberRegNo.value ?? ''),
+      prescribedOn: d.prescribedOn || (draft.prescribedOn.value ?? ''),
+      patientNameOnRx: d.patientNameOnRx || (draft.patientName.value ?? ''),
+    }));
+    setItems((list) =>
+      list.map((item) => {
+        const line = draft.lines.find((l) => l.product?.id === item.product.id);
+        if (!line) return { ...item, notOnPrescription: draft.lines.length > 0 && Boolean(item.itemId) };
+        return {
+          ...item,
+          notOnPrescription: false,
+          aiUnsure: line.uncertain,
+          dose: item.dose ?? line.dose,
+          doseNote: item.dose ? item.doseNote : line.dose ? 'suggested from the text' : null,
+          durationDays: item.durationDays ?? line.durationDays,
+        };
+      }),
+    );
+  }, [draft]);
+
+  const retryAi = useMutation({
+    mutationFn: () => api.post(`/pharmacist/prescriptions/${data.prescription!.id}/retry-ai`),
+    onSuccess: () => onReload(),
+    onError: (e) => setError(errorMessage(e, t)),
+  });
+  const retryButton = (
+    <Button size="sm" variant="secondary" loading={retryAi.isPending} onClick={() => retryAi.mutate()}>
+      Retry AI
+    </Button>
+  );
 
   const tooOld = Boolean(details.prescribedOn) && addDays(dateOnly(details.prescribedOn), RX_VALIDITY_DAYS) < todayIst();
   const hasH1 = items.some((i) => i.decision === 'APPROVE' && i.product.schedule === 'H1');
@@ -221,8 +264,9 @@ function Workspace({ data, onDone, onReload }: { data: WorkspaceDto; onDone: (me
 
         <div className="flex min-w-0 flex-col gap-6 pb-28">
           <div className="flex flex-col gap-2">
-            {data.prescription?.aiStatus === 'FAILED' && <Banner tone="neutral" title="The AI couldn't read this prescription. Add the medicines from the image." />}
-            {data.prescription?.aiStatus === 'UNREADABLE' && <Banner tone="warning" title="The AI found this hard to read. Consider requesting a clearer photo." />}
+            {data.prescription?.aiStatus === 'READING' && <Banner tone="neutral" title="The AI is reading this prescription. You can start now; its draft will appear here." />}
+            {data.prescription?.aiStatus === 'FAILED' && <Banner tone="neutral" title="The AI couldn't read this prescription. Add the medicines from the image." action={editable ? retryButton : undefined} />}
+            {data.prescription?.aiStatus === 'UNREADABLE' && <Banner tone="warning" title="The AI found this hard to read. Consider requesting a clearer photo." action={editable ? retryButton : undefined} />}
             {nameMismatch && <Banner tone="warning" title={`Name on the prescription ("${draft!.patientName.value}") may not match the patient (${data.patient.fullName}).`} />}
             {(draft?.unreadableLineCount ?? 0) > 0 && <Banner tone="warning" title={`${draft!.unreadableLineCount} line(s) on the prescription couldn't be read.`} />}
             {tooOld && <Banner tone="warning" title={`This prescription is older than the ${RX_VALIDITY_DAYS}-day policy, so it can't be approved. Reject it or ask for a new one.`} />}

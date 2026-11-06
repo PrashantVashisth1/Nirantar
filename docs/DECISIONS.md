@@ -121,4 +121,8 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **The free tier allows about 20 AI reads a day per model.** Measured, not assumed: Google answered "limit: 20 requests per day on Free Tier" during the eval. So a model over its limit isn't asked again, the eval can resume across days, the seeded orders carry drafts that need no AI call, and when the quota runs out new uploads take the manual path, which is complete. A real deployment would need a paid tier; this is stated in the TDD rather than hidden.
 
+**Local Postgres moved from port 5433 to 15433.** After a reboot, Windows (Hyper-V) reserved 5414-6013 and Docker couldn't bind 5433. A port outside that range needs no admin commands.
+
+**Testing against the real AI found two more UI bugs.** "Take the photo again" cleared the photo first, which unmounted the file input while the chooser was open, so the chosen file was silently lost; the photo now stays until a new one is chosen. And Retry AI existed on the server with no button; it's now in the workspace, the draft appears without a reload, and it only fills empty fields so nothing the pharmacist typed is overwritten.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

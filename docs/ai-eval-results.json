@@ -2,68 +2,31 @@
   "summary": {
     "model": "gemini-3.6-flash",
     "fallbackModel": "gemini-3.5-flash-lite",
-    "readsByFallback": 7,
-    "runAt": "2026-11-05T19:37:48.951Z",
-    "samplesRead": 7,
-    "failures": [
-      {
-        "file": "rx-h1",
-        "error": "PROVIDER_ERROR"
-      },
-      {
-        "file": "rx-mitali",
-        "error": "PROVIDER_ERROR"
-      },
-      {
-        "file": "rx-tapas",
-        "error": "PROVIDER_ERROR"
-      },
-      {
-        "file": "rx-handwritten",
-        "error": "PROVIDER_ERROR"
-      },
-      {
-        "file": "rx-haripada",
-        "error": "PROVIDER_ERROR"
-      },
-      {
-        "file": "rx-farhana",
-        "error": "PROVIDER_ERROR"
-      },
-      {
-        "file": "rx-rina-old",
-        "error": "PROVIDER_ERROR"
-      },
-      {
-        "file": "rx-farhana-old",
-        "error": "PROVIDER_ERROR"
-      },
-      {
-        "file": "rx-bikram",
-        "error": "PROVIDER_ERROR"
-      }
-    ],
-    "linesExpected": 8,
-    "linesMatched": 8,
-    "dosesCorrect": 8,
+    "readsByFallback": 8,
+    "runAt": "2026-11-06T09:35:10.507Z",
+    "samplesRead": 16,
+    "failures": [],
+    "linesExpected": 24,
+    "linesMatched": 24,
+    "dosesCorrect": 24,
     "wrongProductSelected": 0,
     "unsafeReads": [],
-    "patientNamesCorrect": 5,
-    "medianLatencySeconds": 11.1,
+    "patientNamesCorrect": 14,
+    "medianLatencySeconds": 11,
     "byKind": [
       {
         "kind": "typed",
-        "samples": 3,
-        "linesExpected": 4,
-        "linesMatched": 4,
-        "dosesCorrect": 4
+        "samples": 6,
+        "linesExpected": 10,
+        "linesMatched": 10,
+        "dosesCorrect": 10
       },
       {
         "kind": "handwriting_font",
-        "samples": 2,
-        "linesExpected": 4,
-        "linesMatched": 4,
-        "dosesCorrect": 4
+        "samples": 8,
+        "linesExpected": 14,
+        "linesMatched": 14,
+        "dosesCorrect": 14
       },
       {
         "kind": "handwritten_photo",
@@ -166,6 +129,123 @@
       "safe": true,
       "latencyMs": 11834,
       "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-h1",
+      "kind": "typed",
+      "aiStatus": "READY",
+      "expected": 1,
+      "matched": 1,
+      "doseCorrect": 1,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 13544,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-mitali",
+      "kind": "typed",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 11098,
+      "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-tapas",
+      "kind": "typed",
+      "aiStatus": "READY",
+      "expected": 3,
+      "matched": 3,
+      "doseCorrect": 3,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 12790,
+      "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-handwritten",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 10566,
+      "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-haripada",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 8902,
+      "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-farhana",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 9174,
+      "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-rina-old",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 1,
+      "matched": 1,
+      "doseCorrect": 1,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 10493,
+      "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-farhana-old",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 1,
+      "matched": 1,
+      "doseCorrect": 1,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 11027,
+      "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-bikram",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 9508,
+      "model": "gemini-3.6-flash"
     }
   ]
 }

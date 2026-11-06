@@ -16,7 +16,7 @@ Requires Node 22+ and Docker.
 
 ```bash
 npm install
-npm run db:up                         # Postgres in Docker on port 5433
+npm run db:up                         # Postgres in Docker on port 15433
 cp backend/.env.example backend/.env  # then set DATABASE_URL (see docker-compose.yml)
 npm run db:migrate                    # create tables
 npm run db:seed                       # demo data, including the brief's sample orders

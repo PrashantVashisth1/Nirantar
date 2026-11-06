@@ -7,7 +7,7 @@ import { execSync } from 'node:child_process';
 export default function setup() {
   const databaseUrl =
     process.env.DATABASE_URL ??
-    'postgresql://nirantar:nirantar_local_only@localhost:5433/nirantar_test';
+    'postgresql://nirantar:nirantar_local_only@localhost:15433/nirantar_test';
   execSync('npx prisma migrate deploy', {
     stdio: 'pipe',
     env: { ...process.env, DATABASE_URL: databaseUrl },

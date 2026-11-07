@@ -31,6 +31,26 @@ export interface MeDto {
   remindersOptIn: boolean;
   store: { id: string; name: string } | null;
   pharmacistRegNo: string | null;
+  /** Test mode only: what this demo person does and what a reviewer can try. */
+  demoGuide: DemoGuideDto | null;
+}
+
+export interface DemoGuideDto {
+  name: string;
+  job: string;
+  tryThis: string;
+}
+
+/** Test mode only: someone a reviewer can continue as. Never includes credentials. */
+export interface DemoAccountDto extends DemoGuideDto {
+  key: string;
+  group: 'CUSTOMER' | 'PHARMACIST' | 'OPS';
+  headline: string;
+}
+
+export interface AppConfigDto {
+  testMode: boolean;
+  demoAccounts?: DemoAccountDto[];
 }
 
 export interface OtpRequestResult {

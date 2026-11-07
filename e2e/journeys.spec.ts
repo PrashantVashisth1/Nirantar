@@ -2,10 +2,13 @@
  * The product's main journeys from the plan (E1, E2, E3), plus language and the stock file.
  * They run in order against one demo world, like a real day at the chain.
  */
-import { expect, test, type BrowserContext } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { DEBASISH, FARHANA, IMRAN, OPS, PHONE_360, SANJUKTA, SUDIPTA, expectNoSidewaysScroll, signInCustomer, signInStaff } from './helpers';
 
 test.describe.configure({ mode: 'serial' });
+
+/** The order's own header line, not an order mentioned in the demo guide. */
+const orderNumberOn = async (page: Page) => (await page.getByText(/^RX-\d+ · /).first().innerText()).match(/RX-\d+/)![0];
 
 let orderUrl = '';
 let orderNumber = '';
@@ -35,7 +38,7 @@ test('E1: a customer at 360 px uploads a prescription and places an order', asyn
   await expectNoSidewaysScroll(page);
 
   orderUrl = new URL(page.url()).pathname;
-  orderNumber = (await page.getByText(/RX-\d+/).first().innerText()).match(/RX-\d+/)![0];
+  orderNumber = await orderNumberOn(page);
   customerSession = await context.storageState();
   await context.close();
 });
@@ -117,7 +120,7 @@ test('E3: a reminder goes out, and the customer reorders in one tap', async ({ b
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByRole('button', { name: 'Place order' }).click();
   await expect(page.getByText('Your pharmacist is checking the prescription')).toBeVisible();
-  const refillNumber = (await page.getByText(/RX-\d+/).first().innerText()).match(/RX-\d+/)![0];
+  const refillNumber = await orderNumberOn(page);
   await context.close();
 
   // The pharmacist doesn't retype the dose: it's offered from the last fill, then approved.
@@ -136,6 +139,34 @@ test('E4: the language saved on the account follows the customer to a new phone'
   await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
   await expect(page.getByRole('link', { name: 'প্রেসক্রিপশন আপলোড করুন' }).first()).toBeVisible();
   await expectNoSidewaysScroll(page);
+  await context.close();
+});
+
+test('E6: a reviewer can become anyone in one tap and is told what to try', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: PHONE_360 });
+  const page = await context.newPage();
+  await page.goto('/signin');
+  await expectNoSidewaysScroll(page);
+
+  // The real OTP form stays, with the shortcut below it.
+  await expect(page.getByLabel('Mobile number')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Try the demo' })).toBeVisible();
+  await page.getByRole('button', { name: /Sanjukta Roy/ }).click();
+  await expect(page).toHaveURL(/\/pharmacist$/);
+  await expect(page.getByText("You're signed in as Sanjukta Roy")).toBeVisible();
+  await expect(page.getByText('Try this:')).toBeVisible();
+  await expectNoSidewaysScroll(page);
+
+  // Hiding it lasts for this person; the next person gets their own.
+  await page.getByRole('button', { name: 'Hide this guide' }).click();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Verification queue' })).toBeVisible();
+  await expect(page.getByText("You're signed in as")).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await page.getByRole('button', { name: /Debasish Ghosh/ }).click();
+  await expect(page).toHaveURL(/\/home$/);
+  await expect(page.getByText("You're signed in as Debasish Ghosh")).toBeVisible();
   await context.close();
 });
 

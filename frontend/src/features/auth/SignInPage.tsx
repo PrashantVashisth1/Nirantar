@@ -16,12 +16,14 @@ import { CustomerLayout } from '../../layouts/CustomerLayout';
 import { api } from '../../lib/api';
 import { errorMessage } from '../../lib/errors';
 import { homePathFor, meQueryKey, useMe } from '../../lib/session';
+import { DemoPanel } from './DemoPanel';
 
 /** C1: customers sign in with a phone OTP; staff use email + password on the same screen. */
 export function SignInPage() {
   const { data: me, isLoading } = useMe();
   const [mode, setMode] = useState<'customer' | 'staff'>('customer');
   const { t } = useTranslation();
+  const onSignedIn = useSignedIn();
 
   if (isLoading) {
     return (
@@ -46,6 +48,7 @@ export function SignInPage() {
             {mode === 'customer' ? t('signIn.staffLink') : t('signIn.customerLink')}
           </button>
         </div>
+        <DemoPanel onSignedIn={onSignedIn} />
       </div>
     </CustomerLayout>
   );

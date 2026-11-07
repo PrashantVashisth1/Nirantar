@@ -135,4 +135,6 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **Three different models, tried in order.** Testing the live site, the first read failed: the primary model was over its daily limit and the fallback happened to be overloaded at that moment. Going back to a model that's already over its limit can't help, so the third attempt now uses a third model. Each has its own free-tier limit, so this also gives reviewers more reads per day. Failure still ends in the complete manual path.
 
+**One-tap demo sign-in, with a guide for each person.** Reviewers shouldn't have to copy numbers from a document, and they switch roles a lot. Going through OTP wasn't enough: a phone can only ask for 3 codes in 15 minutes, which is right for real users and would block a reviewer. So test mode has a separate sign-in route. The demo already shows its OTP on screen, so this exposes nothing new. The list comes from the server with no phones, emails or passwords, and outside test mode the route answers 404 and the list isn't sent; tests prove both. After signing in, each person sees what they do and what to try. The real OTP form stays on the page.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

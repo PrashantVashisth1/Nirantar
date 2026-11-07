@@ -7,6 +7,7 @@ import { Sheet } from '../design-system/Sheet';
 import { LANGUAGE_OPTIONS, setLocale } from '../i18n';
 import { useAppConfig } from '../lib/config';
 import { useMe, useSignOut } from '../lib/session';
+import { DemoGuide } from './DemoGuide';
 import { LanguageSheet } from './LanguageSheet';
 import { TestInboxSheet } from './TestInboxSheet';
 
@@ -89,6 +90,7 @@ export function CustomerLayout({ children }: { children: ReactNode }) {
       </header>
 
       <main id="main" className="mx-auto max-w-[560px] px-4 pb-16 pt-6 sm:px-6">
+        <DemoGuide className="mb-5" />
         {children}
       </main>
 

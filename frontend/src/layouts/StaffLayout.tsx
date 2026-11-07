@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from 'react-router';
 import { Button } from '../design-system/Button';
 import { useAppConfig } from '../lib/config';
 import { useMe, useSignOut } from '../lib/session';
+import { DemoGuide } from './DemoGuide';
 
 /** Staff workbench frame (English only, denser type, full width up to 1440 px). */
 export function StaffLayout({ children }: { children: ReactNode }) {
@@ -68,7 +69,10 @@ export function StaffLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8">
+        <DemoGuide className="mb-5" />
+        {children}
+      </main>
     </div>
   );
 }

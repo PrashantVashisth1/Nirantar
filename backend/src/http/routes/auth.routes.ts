@@ -1,6 +1,10 @@
 import { Router, type Request } from 'express';
 import { OtpRequestSchema, OtpVerifySchema, StaffLoginSchema } from '@nirantar/shared';
+import { z } from 'zod';
+import { isDemoMode } from '../../config/env';
 import { prisma } from '../../lib/db';
+import { notFound } from '../../lib/errors';
+import { findDemoAccount } from '../../services/auth/demo-accounts';
 import { requestOtp, verifyOtp } from '../../services/auth/otp.service';
 import { verifyStaffLogin } from '../../services/auth/staff-auth.service';
 import { CUSTOMER_SESSION_MS, SESSION_COOKIE, STAFF_SESSION_MS } from '../middleware/session';
@@ -50,6 +54,26 @@ authRouter.post('/staff/login', authRateLimit, async (req, res) => {
     include: { store: { select: { id: true, name: true } } },
   });
   res.json({ user: toMeDto(withStore) });
+});
+
+// One-tap sign-in for reviewers (the OTP limits would block role switching). The
+// demo already shows its code on screen, so this gives away nothing new, and
+// outside test mode the route doesn't exist.
+const DemoLoginSchema = z.object({ key: z.string().max(30) }).strict();
+
+authRouter.post('/demo-login', authRateLimit, async (req, res) => {
+  if (!isDemoMode()) throw notFound();
+  const { key } = parse(DemoLoginSchema, req.body);
+  const account = findDemoAccount(key);
+  const user =
+    account &&
+    (await prisma.user.findFirst({
+      where: account.phone ? { phone: account.phone } : { email: account.email },
+      include: { store: { select: { id: true, name: true } } },
+    }));
+  if (!user) throw notFound('This demo person was not found. Please reset the demo.');
+  await startSession(req, user, user.role === 'CUSTOMER' ? CUSTOMER_SESSION_MS : STAFF_SESSION_MS);
+  res.json({ user: toMeDto(user) });
 });
 
 authRouter.post('/logout', (req, res, next) => {

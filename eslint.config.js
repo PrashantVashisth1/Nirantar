@@ -26,8 +26,10 @@ export default defineConfig(
     },
   },
   {
-    // CommonJS script run directly with node.
+    // CommonJS scripts run with node. Some pass functions to Playwright that run
+    // inside the browser page, so browser globals are allowed too.
     files: ['scripts/**/*.cjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {

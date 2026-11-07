@@ -2,8 +2,8 @@
   "summary": {
     "model": "gemini-3.6-flash",
     "fallbackModel": "gemini-3.5-flash-lite",
-    "readsByFallback": 8,
-    "runAt": "2026-11-06T09:35:10.507Z",
+    "readsByFallback": 7,
+    "runAt": "2026-11-07T19:07:31.237Z",
     "samplesRead": 16,
     "failures": [],
     "linesExpected": 24,
@@ -12,7 +12,7 @@
     "wrongProductSelected": 0,
     "unsafeReads": [],
     "patientNamesCorrect": 14,
-    "medianLatencySeconds": 11,
+    "medianLatencySeconds": 12.3,
     "byKind": [
       {
         "kind": "typed",
@@ -40,19 +40,6 @@
   },
   "scores": [
     {
-      "file": "rx-typed",
-      "kind": "typed",
-      "aiStatus": "READY",
-      "expected": 2,
-      "matched": 2,
-      "doseCorrect": 2,
-      "wrongProduct": 0,
-      "patientCorrect": true,
-      "safe": true,
-      "latencyMs": 19130,
-      "model": "gemini-3.5-flash-lite"
-    },
-    {
       "file": "rx-thyroid",
       "kind": "typed",
       "aiStatus": "READY",
@@ -62,8 +49,8 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 10013,
-      "model": "gemini-3.5-flash-lite"
+      "latencyMs": 77156,
+      "model": "gemini-3.6-flash"
     },
     {
       "file": "rx-debasish",
@@ -75,73 +62,8 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 12890,
-      "model": "gemini-3.5-flash-lite"
-    },
-    {
-      "file": "rx-nirmal",
-      "kind": "handwriting_font",
-      "aiStatus": "READY",
-      "expected": 2,
-      "matched": 2,
-      "doseCorrect": 2,
-      "wrongProduct": 0,
-      "patientCorrect": true,
-      "safe": true,
-      "latencyMs": 9625,
-      "model": "gemini-3.5-flash-lite"
-    },
-    {
-      "file": "rx-sharmila",
-      "kind": "handwriting_font",
-      "aiStatus": "READY",
-      "expected": 2,
-      "matched": 2,
-      "doseCorrect": 2,
-      "wrongProduct": 0,
-      "patientCorrect": true,
-      "safe": true,
-      "latencyMs": 9306,
-      "model": "gemini-3.5-flash-lite"
-    },
-    {
-      "file": "rx-blurry",
-      "kind": "blurry",
-      "aiStatus": "UNSURE",
-      "expected": 0,
-      "matched": 0,
-      "doseCorrect": 0,
-      "wrongProduct": 0,
-      "patientCorrect": null,
-      "safe": true,
-      "latencyMs": 11086,
-      "model": "gemini-3.5-flash-lite"
-    },
-    {
-      "file": "not-a-prescription",
-      "kind": "not_rx",
-      "aiStatus": "UNREADABLE",
-      "expected": 0,
-      "matched": 0,
-      "doseCorrect": 0,
-      "wrongProduct": 0,
-      "patientCorrect": null,
-      "safe": true,
-      "latencyMs": 11834,
-      "model": "gemini-3.5-flash-lite"
-    },
-    {
-      "file": "rx-h1",
-      "kind": "typed",
-      "aiStatus": "READY",
-      "expected": 1,
-      "matched": 1,
-      "doseCorrect": 1,
-      "wrongProduct": 0,
-      "patientCorrect": true,
-      "safe": true,
-      "latencyMs": 13544,
-      "model": "gemini-3.5-flash-lite"
+      "latencyMs": 9537,
+      "model": "gemini-3.6-flash"
     },
     {
       "file": "rx-mitali",
@@ -153,8 +75,8 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 11098,
-      "model": "gemini-3.6-flash"
+      "latencyMs": 12513,
+      "model": "gemini-3.5-flash-lite"
     },
     {
       "file": "rx-tapas",
@@ -166,7 +88,7 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 12790,
+      "latencyMs": 12514,
       "model": "gemini-3.6-flash"
     },
     {
@@ -179,7 +101,7 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 10566,
+      "latencyMs": 11880,
       "model": "gemini-3.6-flash"
     },
     {
@@ -192,8 +114,8 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 8902,
-      "model": "gemini-3.6-flash"
+      "latencyMs": 11450,
+      "model": "gemini-3.5-flash-lite"
     },
     {
       "file": "rx-farhana",
@@ -205,7 +127,7 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 9174,
+      "latencyMs": 11738,
       "model": "gemini-3.6-flash"
     },
     {
@@ -218,7 +140,7 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 10493,
+      "latencyMs": 11124,
       "model": "gemini-3.6-flash"
     },
     {
@@ -231,8 +153,34 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 11027,
+      "latencyMs": 13463,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-nirmal",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 12485,
       "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-sharmila",
+      "kind": "handwriting_font",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 13080,
+      "model": "gemini-3.5-flash-lite"
     },
     {
       "file": "rx-bikram",
@@ -244,8 +192,60 @@
       "wrongProduct": 0,
       "patientCorrect": true,
       "safe": true,
-      "latencyMs": 9508,
+      "latencyMs": 16566,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "rx-blurry",
+      "kind": "blurry",
+      "aiStatus": "UNREADABLE",
+      "expected": 0,
+      "matched": 0,
+      "doseCorrect": 0,
+      "wrongProduct": 0,
+      "patientCorrect": null,
+      "safe": true,
+      "latencyMs": 11952,
+      "model": "gemini-3.5-flash-lite"
+    },
+    {
+      "file": "not-a-prescription",
+      "kind": "not_rx",
+      "aiStatus": "UNREADABLE",
+      "expected": 0,
+      "matched": 0,
+      "doseCorrect": 0,
+      "wrongProduct": 0,
+      "patientCorrect": null,
+      "safe": true,
+      "latencyMs": 7761,
       "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-typed",
+      "kind": "typed",
+      "aiStatus": "READY",
+      "expected": 2,
+      "matched": 2,
+      "doseCorrect": 2,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 12315,
+      "model": "gemini-3.6-flash"
+    },
+    {
+      "file": "rx-h1",
+      "kind": "typed",
+      "aiStatus": "READY",
+      "expected": 1,
+      "matched": 1,
+      "doseCorrect": 1,
+      "wrongProduct": 0,
+      "patientCorrect": true,
+      "safe": true,
+      "latencyMs": 11481,
+      "model": "gemini-3.5-flash-lite"
     }
   ]
 }

@@ -45,8 +45,11 @@ const EnvSchema = z.object({
   // Empty or "off" means no AI: every prescription goes to manual entry.
   GEMINI_API_KEY: z.preprocess((v) => (v === '' || v === 'off' ? undefined : v), z.string().optional()),
   GEMINI_MODEL: z.string().default('gemini-3.6-flash'),
-  // Used for the one retry. A different model, because an overloaded one stays overloaded.
-  GEMINI_FALLBACK_MODEL: z.string().default('gemini-3.5-flash-lite'),
+  // Tried in order when a read fails. Comma-separated.
+  GEMINI_FALLBACK_MODELS: z
+    .string()
+    .default('gemini-3.5-flash-lite,gemini-3.1-flash-lite')
+    .transform((v) => v.split(',').map((m) => m.trim()).filter(Boolean)),
   AI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 });
 

@@ -21,7 +21,7 @@ const VALID = JSON.stringify({
 class FakeReader extends GeminiReader {
   calls: string[] = [];
   constructor(private readonly answers: (string | Error)[]) {
-    super('not-a-real-key', 'primary-model', 'fallback-model', 0);
+    super('not-a-real-key', ['primary-model', 'fallback-model', 'third-model'], 0);
   }
   protected override async send(model: string): Promise<string> {
     this.calls.push(model);
@@ -46,11 +46,11 @@ describe('GeminiReader', () => {
     expect(reader.calls).toEqual(['primary-model', 'fallback-model']);
   });
 
-  it('goes back to the first model if the second is overloaded too', async () => {
+  it('reaches the third model if the first two are overloaded', async () => {
     const overload = new Error('503 high demand');
     const reader = new FakeReader([overload, overload, VALID]);
-    expect(await read(reader)).toMatchObject({ ok: true, model: 'primary-model' });
-    expect(reader.calls).toEqual(['primary-model', 'fallback-model', 'primary-model']);
+    expect(await read(reader)).toMatchObject({ ok: true, model: 'third-model' });
+    expect(reader.calls).toEqual(['primary-model', 'fallback-model', 'third-model']);
   });
 
   it('after three bad answers reports failure, so the pharmacist enters it by hand', async () => {
@@ -65,10 +65,9 @@ describe('GeminiReader', () => {
     expect(reader.calls).toHaveLength(1);
   });
 
-  it('does not ask a model again once it reports its limit is reached', async () => {
+  it('survives the first model being over its daily limit and the second being overloaded', async () => {
     const reader = new FakeReader([new Error('429 limit: 20 requests per day'), new Error('503 high demand'), VALID]);
-    expect(await read(reader)).toMatchObject({ ok: false });
-    expect(reader.calls).toEqual(['primary-model', 'fallback-model']);
+    expect(await read(reader)).toMatchObject({ ok: true, model: 'third-model' });
   });
 
   it('does retry when told to slow down', async () => {

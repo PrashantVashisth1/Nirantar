@@ -109,7 +109,7 @@ async function main() {
   const latencies = scores.map((s) => s.latencyMs).sort((a, b) => a - b);
   const summary = {
     model: env.GEMINI_MODEL,
-    fallbackModel: env.GEMINI_FALLBACK_MODEL,
+    fallbackModels: env.GEMINI_FALLBACK_MODELS,
     readsByFallback: scores.filter((s) => s.model !== env.GEMINI_MODEL).length,
     runAt: new Date().toISOString(),
     samplesRead: scores.length,

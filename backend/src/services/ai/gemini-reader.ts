@@ -11,19 +11,18 @@ import {
 
 /**
  * Gemini adapter. Structured JSON output with our schema and a timeout. On a
- * timeout, overload or invalid output it tries a second model, then the first
- * again after short waits: free-tier overload (503) comes and goes, and the first
- * eval lost 5 of 16 reads to it. Three attempts stay inside the 2-minute limit
- * after which a read counts as failed. If all fail, the pharmacist enters the
- * medicines by hand.
+ * timeout, overload, daily limit or invalid output it moves to the next model
+ * after a short wait: each free-tier model has its own limit (about 20 reads a
+ * day), and overload (503) hits one model at a time. Three attempts stay inside
+ * the 2-minute limit after which a read counts as failed. If all fail, the
+ * pharmacist enters the medicines by hand.
  */
 export class GeminiReader implements PrescriptionReader {
   private readonly client: GoogleGenAI;
 
   constructor(
     apiKey: string,
-    private readonly model: string = env.GEMINI_MODEL,
-    private readonly fallbackModel: string = env.GEMINI_FALLBACK_MODEL,
+    private readonly models: string[] = [env.GEMINI_MODEL, ...env.GEMINI_FALLBACK_MODELS],
     private readonly retryDelayMs: number = 3_000,
   ) {
     this.client = new GoogleGenAI({ apiKey });
@@ -31,17 +30,13 @@ export class GeminiReader implements PrescriptionReader {
 
   async read(image: Buffer, mimeType: string): Promise<ReadResult> {
     let last: ReadResult = { ok: false, error: 'PROVIDER_ERROR' };
-    const outOfQuota = new Set<string>();
-    for (const [index, model] of [this.model, this.fallbackModel, this.model].entries()) {
-      // A model over its limit stays over it, and asking again only uses up more of the day.
-      if (outOfQuota.has(model)) continue;
+    for (const [index, model] of this.models.entries()) {
       if (index > 0) await new Promise((resolve) => setTimeout(resolve, this.retryDelayMs));
       last = await this.once(model, image, mimeType);
       if (last.ok) return last;
       logger.warn({ attempt: index + 1, model, error: last.error, detail: last.detail }, 'Prescription read failed');
       // A refused request (bad key, bad schema) fails the same way every time. 429 is only "slow down".
       if (last.error === 'PROVIDER_ERROR' && /^4(?!29)\d\d\b/.test(last.detail ?? '')) break;
-      if (/^429\b/.test(last.detail ?? '')) outOfQuota.add(model);
     }
     return last;
   }

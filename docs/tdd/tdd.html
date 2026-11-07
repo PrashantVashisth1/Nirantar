@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Nirantar: Technical Design Document</title>
+<style>
+@font-face { font-family: 'Source Serif 4'; font-weight: 600; src: url('../../node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans'; font-weight: 400; src: url('../../node_modules/@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans'; font-weight: 600; src: url('../../node_modules/@fontsource/noto-sans/files/noto-sans-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans Mono'; font-weight: 400; src: url('../../node_modules/@fontsource/noto-sans-mono/files/noto-sans-mono-latin-400-normal.woff2') format('woff2'); }
+:root { --ink:#1A2421; --ink2:#4D5954; --ink3:#6B7570; --line:#E3E0D7; --sunken:#F0EEE8; --pine:#0F5C4A; --subtle:#E6F0EB; --warn:#8A5A00; --warnbg:#FCF3DC; }
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; font: 400 10pt/1.5 'Noto Sans', sans-serif; color: var(--ink); }
+h1,h2,h3 { font-family: 'Source Serif 4', serif; font-weight: 600; color: var(--ink); line-height: 1.2; }
+h1 { font-size: 27pt; margin: 0 0 4pt; }
+h2 { font-size: 16pt; margin: 22pt 0 7pt; padding-top: 7pt; border-top: 1.5pt solid var(--pine); break-after: avoid; }
+h3 { font-size: 11.5pt; margin: 13pt 0 4pt; break-after: avoid; }
+p { margin: 0 0 7pt; } ul,ol { margin: 0 0 7pt; padding-left: 15pt; } li { margin-bottom: 2.5pt; }
+a { color: var(--pine); text-decoration: none; }
+code { font: 8.6pt 'Noto Sans Mono', monospace; background: var(--sunken); padding: 0 2.5pt; border-radius: 2pt; }
+table { width: 100%; border-collapse: collapse; margin: 3pt 0 9pt; font-size: 8.8pt; line-height: 1.38; }
+th { text-align: left; font-weight: 600; background: var(--sunken); padding: 3.5pt 5pt; border-bottom: .75pt solid var(--line); }
+td { padding: 3.5pt 5pt; border-bottom: .75pt solid var(--line); vertical-align: top; }
+tr { break-inside: avoid; }
+.cover { background: var(--subtle); border-radius: 6pt; padding: 13pt 15pt; margin: 9pt 0 12pt; }
+.cover div { margin-bottom: 2pt; } .cover strong { display: inline-block; min-width: 70pt; }
+.note { background: var(--warnbg); border-radius: 4pt; padding: 7pt 10pt; margin: 6pt 0 9pt; font-size: 9.2pt; break-inside: avoid; }
+.key { background: var(--subtle); border-radius: 4pt; padding: 7pt 10pt; margin: 6pt 0 9pt; font-size: 9.2pt; break-inside: avoid; }
+.muted { color: var(--ink2); }
+.shots { display: flex; gap: 9pt; margin: 6pt 0 9pt; break-inside: avoid; }
+.shots figure { margin: 0; flex: 1 1 0; min-width: 0; }
+figure img { width: 100%; display: block; border: .75pt solid var(--line); border-radius: 4pt; }
+.shots figure img { height: 272pt; object-fit: cover; object-position: top; }
+figcaption { font-size: 8.3pt; color: var(--ink2); margin-top: 3pt; line-height: 1.35; }
+.wide { margin: 6pt 0 10pt; break-inside: avoid; }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 3pt; font-size: 8.2pt; margin: 4pt 0 8pt; }
+.flow span { background: var(--sunken); border-radius: 3pt; padding: 2pt 5pt; } .flow span.s { background: var(--subtle); color: var(--pine); font-weight: 600; } .flow i { font-style: normal; color: var(--ink3); }
+svg text { font-family: 'Noto Sans', sans-serif; }
+.new-page { break-before: page; }
+</style>
+</head>
+<body>
+
+<h1>Nirantar</h1>
+<p class="muted" style="font-size:11.5pt;margin-bottom:0">Technical Design Document · refill and pharmacist verification platform for Company A, Kolkata</p>
+<div class="cover">
+  <div><strong>GitHub</strong> <a href="https://github.com/PrashantVashisth1/Nirantar">github.com/PrashantVashisth1/Nirantar</a></div>
+  <div><strong>Live app</strong> <a href="https://nirantar-zeta.vercel.app">nirantar-zeta.vercel.app</a></div>
+  <div><strong>To try it</strong> Open the live app and tap any person under <b>Try the demo</b>. No typing or passwords; each person tells you what to try.</div>
+  <div><strong>Problem</strong> Problem Statement 1, Software Engineering core build</div>
+</div>
+
+<h2 style="margin-top:6pt">1. Summary</h2>
+<p>Company A's regular customers order by phone or WhatsApp, refills depend on memory, prescriptions sit on store phones, and stores can't see each other's stock. The brief puts the cost at ₹1.33 crore a year. Nirantar lets a customer, often someone ordering for a parent, reorder in about a minute. A registered pharmacist checks every item beside the prescription. The order then goes to the nearest store with stock, and the customer is reminded before the medicine runs out.</p>
+<p><b>The decision that shapes the design:</b> the brief's hard part is that no Schedule H item may ship without approval. A bug in the app must not be able to break that, so the rule lives in the database. Even a raw SQL update can't move an order to picking unless a pharmacist approved every item exactly as it will ship (section 6).</p>
+
+<h3>The brief against what was built</h3>
+<table>
+<tr><th style="width:36%">Requirement</th><th style="width:14%">Status</th><th>Where, and any limit</th></tr>
+<tr><td>Reorder with prescription upload</td><td><b>Core, works</b></td><td>Home → one-tap reorder → cart → order</td></tr>
+<tr><td>AI reads prescriptions as a draft</td><td><b>Core, works</b></td><td>Gemini, with failure paths and a measured eval (section 7)</td></tr>
+<tr><td>Pharmacist queue: side by side, approve, edit, reject</td><td><b>Core, works</b></td><td>Queue and workspace; re-upload request; per-item decisions</td></tr>
+<tr><td>Routing to nearest store with stock, from daily CSV</td><td><b>Core, works</b></td><td>Row-locked reservation; CSV preview, then all-or-nothing apply</td></tr>
+<tr><td>Refill reminders with one-tap reorder</td><td><b>Core, works</b></td><td>Daily scheduled job; messages go to a test inbox (mock)</td></tr>
+<tr><td>Block Schedule H/H1 without approval</td><td><b>Core, works</b></td><td>Database trigger; also measured live on the dashboard</td></tr>
+<tr><td>Schedule X and narcotics never sold online</td><td>Works</td><td>Fixed in code and database; not a configurable rule</td></tr>
+<tr><td>OTP login, family profiles, search, cart, tracking</td><td>Works</td><td>OTP shown on screen in test mode (allowed mock)</td></tr>
+<tr><td>UPI and cash on delivery (test mode)</td><td>Works</td><td>UPI is a simulated success/failure sheet</td></tr>
+<tr><td>Refill subscriptions</td><td>Works</td><td>Created on delivery; reminder switch per medicine</td></tr>
+<tr><td>Generics with pharmacist approval and customer consent</td><td>Works</td><td>From our catalog; consent is stored and checked by the gate</td></tr>
+<tr><td>Store screen: pick, pack, invoice, handover</td><td>Works</td><td>Unpaid UPI blocks handover</td></tr>
+<tr><td>H1 register</td><td>Works</td><td>Written in the same transaction as handover</td></tr>
+<tr><td>Dashboard and one view of all stores</td><td>Works</td><td>Orders by store, median/p90 verification, rejections, all orders</td></tr>
+<tr><td>Configurable rules</td><td>Partly</td><td>H/H1 rules are data the code reads; no editing screen yet</td></tr>
+<tr><td>Encrypted prescriptions, access log</td><td>Works</td><td>AES-256-GCM; every view logged; no screen to read the log yet</td></tr>
+<tr><td>Bengali, Hindi, English</td><td>Customer side</td><td>Staff screens are English (A10); translations need native review</td></tr>
+</table>
+<p class="muted">Success measures from the brief: median verification under 10 minutes and zero unapproved dispatches are both shown live on the dashboard. Customer adoption and drop-off can't be measured without real customers.</p>
+
+<h2>2. Assumptions</h2>
+<p>Everything not stated in the brief is listed here. <code>[Brief]</code> marks the client's own words.</p>
+<table>
+<tr><th style="width:6%">ID</th><th>Assumption</th></tr>
+<tr><td>A1</td><td>Verification is a shared queue: any registered pharmacist can verify any order. This is what makes a 10-minute median achievable.</td></tr>
+<tr><td>A2</td><td>Each pharmacist belongs to one store and also does its pick, pack and handover. The brief names no separate store-staff role.</td></tr>
+<tr><td>A3</td><td>A prescription is valid for 180 days. A configurable placeholder for the client's compliance team, not a legal fact.</td></tr>
+<tr><td>A4</td><td>Location is the centre of one of about 30 Kolkata/Howrah localities; distance is straight-line; delivery radius 8 km; same-day if routed before 18:00 IST.</td></tr>
+<tr><td>A5</td><td>The stock CSV is the physical shelf count in sale packs, and a full list for each store in the file: missing SKUs become 0. A count older than 48 hours stops a store being used for routing.</td></tr>
+<tr><td>A6</td><td>Whole packs only; no loose tablets.</td></tr>
+<tr><td>A7</td><td>Automatic reminders only for a fixed dose confirmed by a pharmacist. "As needed" medicines get none.</td></tr>
+<tr><td>A8</td><td>UPI is requested after approval, when the final amount is known. Handover requires UPI paid or cash on delivery.</td></tr>
+<tr><td>A9</td><td>Schedule classifications, brands and prices are synthetic, except the three sample items in the brief.</td></tr>
+<tr><td>A10</td><td>Customer screens are in English, Hindi and Bengali; staff screens are in English. Translations are AI-assisted drafts.</td></tr>
+<tr><td>A11</td><td>Every order is verified, refills included, and every item, OTC included ("approves every item" [Brief]).</td></tr>
+<tr><td>A12</td><td>The store shown on RX-50214 and RX-50219 before approval is read as a nearest-store preview; the real assignment happens at approval.</td></tr>
+<tr><td>A13</td><td>The H1 register entry is written at handover, treated as the moment of sale.</td></tr>
+<tr><td>A14</td><td>All people, phones, doctors and registration numbers are fictional. No SMS, WhatsApp or payment is really sent.</td></tr>
+<tr><td>A15</td><td>6 synthetic stores (3 named in the brief, 3 added) and 31 products. Nothing in the code or dashboard is limited to 6.</td></tr>
+<tr><td>A16</td><td>OTP codes and one-tap sign-in exist only when <code>APP_ENV</code> isn't <code>production</code>. A real launch needs an SMS provider.</td></tr>
+<tr><td>A17</td><td>Cheaper generics come from our own catalog: same molecule, strength and form. The AI doesn't suggest them.</td></tr>
+<tr><td>A18</td><td>The public demo is rebuilt every night at 02:00 IST, so its dates and stock counts stay current. Changes made by a reviewer don't survive that.</td></tr>
+<tr><td>A19</td><td>Reminders go out at 09:00 IST, 5, 2 and 0 days before the estimated run-out date.</td></tr>
+</table>
+
+<h2>3. Architecture, and why</h2>
+<svg viewBox="0 0 720 158" width="100%" style="margin:2pt 0 8pt" role="img" aria-label="Browser to Vercel to Express on Render to Neon Postgres, with Gemini and GitHub Actions">
+<defs><marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#6B7570"/></marker></defs>
+<g font-size="10.5" fill="#1A2421">
+<rect x="4" y="44" width="118" height="54" rx="5" fill="#F0EEE8"/><text x="63" y="66" text-anchor="middle" font-weight="600">Browser</text><text x="63" y="82" text-anchor="middle" font-size="9">React app, session cookie</text>
+<rect x="168" y="44" width="118" height="54" rx="5" fill="#F0EEE8"/><text x="227" y="66" text-anchor="middle" font-weight="600">Vercel</text><text x="227" y="82" text-anchor="middle" font-size="9">static app, /api rewrite</text>
+<rect x="332" y="34" width="150" height="74" rx="5" fill="#E6F0EB" stroke="#0F5C4A"/><text x="407" y="54" text-anchor="middle" font-weight="600">Express API (Render)</text><text x="407" y="70" text-anchor="middle" font-size="9">routes → services → domain</text><text x="407" y="84" text-anchor="middle" font-size="9">one process, Singapore</text><text x="407" y="98" text-anchor="middle" font-size="9">AI read runs in background</text>
+<rect x="540" y="10" width="172" height="56" rx="5" fill="#E6F0EB" stroke="#0F5C4A"/><text x="626" y="31" text-anchor="middle" font-weight="600">Postgres (Neon)</text><text x="626" y="46" text-anchor="middle" font-size="9">triggers and CHECKs enforce safety</text><text x="626" y="58" text-anchor="middle" font-size="9">encrypted prescription images</text>
+<rect x="540" y="82" width="172" height="34" rx="5" fill="#F0EEE8"/><text x="626" y="97" text-anchor="middle" font-weight="600">Gemini API</text><text x="626" y="110" text-anchor="middle" font-size="9">three models, tried in order</text>
+<rect x="332" y="124" width="150" height="30" rx="5" fill="#F0EEE8"/><text x="407" y="143" text-anchor="middle" font-size="9">GitHub Actions: reminders, demo refresh</text>
+</g>
+<g stroke="#6B7570" fill="none" marker-end="url(#a)"><path d="M122,71 H166"/><path d="M286,71 H330"/><path d="M482,58 L538,40"/><path d="M482,84 L538,98"/><path d="M407,124 V110"/></g>
+</svg>
+<table>
+<tr><th style="width:15%">Layer</th><th style="width:34%">Choice</th><th>Why, and what was rejected</th></tr>
+<tr><td>Backend shape</td><td>One Express service, layered: routes → services → pure domain functions</td><td>One deploy and real transactions across orders, stock and approvals. Microservices and queues would add failure modes with no benefit at this size.</td></tr>
+<tr><td>Database</td><td>PostgreSQL + Prisma, plus hand-written SQL triggers and CHECKs</td><td>Row locks, constraints and triggers enforce the hard part. A document database can't give that guarantee.</td></tr>
+<tr><td>Frontend</td><td>React, Vite, TypeScript, Tailwind, TanStack Query, Radix</td><td>A phone-first web app, as the brief asks for a customer web app. Next.js wasn't needed: there's nothing to render on the server, and everything sits behind sign-in.</td></tr>
+<tr><td>Shared code</td><td><code>shared/</code> workspace: enums, order state machine, API types</td><td>Frontend and backend can't drift apart on statuses or rules.</td></tr>
+<tr><td>Sign-in</td><td>Sessions in Postgres, HttpOnly cookie, first-party through the Vercel rewrite</td><td>Can be revoked on the server, and JavaScript can't read it. Rejected JWT in local storage for those two reasons.</td></tr>
+<tr><td>Files</td><td>Encrypted bytes in a separate database table</td><td>Render's free tier has no persistent disk. Object storage is the production next step.</td></tr>
+<tr><td>Background work</td><td>AI read in the API process; a read stuck over 2 minutes is marked failed the next time it's looked at. Daily jobs through GitHub Actions</td><td>No worker or Redis needed at this volume. Render's free tier sleeps, so an in-process cron wouldn't be reliable.</td></tr>
+<tr><td>Hosting</td><td>Vercel, Render and Neon free tiers; API and database both in Singapore</td><td>Zero budget for this build, and co-located API and database. Neon has no India region, which a real launch must revisit under DPDP.</td></tr>
+</table>
+
+<h2>4. Data model</h2>
+<p>Money is stored as integer paise. Tables are snake_case so the SQL triggers stay readable. Each table below exists to answer one question the brief asks.</p>
+<table>
+<tr><th style="width:27%">Table</th><th>What it holds, and the rule that matters</th></tr>
+<tr><td><code>users</code>, <code>patients</code>, <code>addresses</code></td><td>Account with a role. A pharmacist must have a registration number and a store (CHECK). One account holds several patients, for family ordering.</td></tr>
+<tr><td><code>products</code>, <code>schedule_rules</code></td><td>Catalog with schedule. Rules for OTC, H and H1 are data; a CHECK stops X or NDPS ever getting a rule row, so their ban can't be configured away.</td></tr>
+<tr><td><code>stores</code>, <code>store_stock</code>, <code>stock_imports</code></td><td>On hand and reserved per store; available is the difference. An import's SHA-256 stops the same file being applied twice.</td></tr>
+<tr><td><code>prescriptions</code>, <code>prescription_files</code>, <code>prescription_access_logs</code></td><td>AI status and draft, review status, doctor details. The encrypted image is in a separate table. Every view and AI read is logged.</td></tr>
+<tr><td><code>orders</code></td><td>Status, store, address copy, payment, invoice, rider, and a <code>version</code> so a stale screen gets a 409 instead of overwriting a decision. CHECKs: invoice when packed, store when assigned, paid or COD at handover.</td></tr>
+<tr><td><code>order_items</code></td><td>Current product and quantity beside <b>approved_by, approved_product, approved_quantity, approved_prescription, approved_generic, customer_choice, consent_at</b>. The gate compares the two.</td></tr>
+<tr><td><code>order_events</code>, <code>h1_register</code></td><td>The audit trail of every status change, and the legal register with prescriber and patient details.</td></tr>
+<tr><td><code>refill_subscriptions</code>, <code>reminders</code>, <code>messages</code></td><td>Daily units and run-out date from the pharmacist's dose. A unique key on (subscription, cycle, offset) means a reminder can't be sent twice. Messages are the test outbox.</td></tr>
+</table>
+
+<h2>5. Main flows</h2>
+<h3>Order lifecycle</h3>
+<div class="flow"><span class="s">Awaiting pharmacist</span><i>→</i><span>Approved</span><i>→</i><span>Assigned</span><i>→</i><span>Picking</span><i>→</i><span>Packed</span><i>→</i><span>Out for delivery</span><i>→</i><span class="s">Delivered</span></div>
+<p>Side paths: from the queue to <b>on hold</b> (new photo needed), <b>awaiting customer</b> (changes or generic to confirm) or <b>rejected</b>; from approved to <b>awaiting stock</b>; <b>cancelled</b> before picking, which releases reserved stock. Allowed moves live in one table in <code>shared/</code>, and each move writes an audit event.</p>
+<h3>Reorder and verification</h3>
+<ol>
+<li>The customer taps <b>Reorder</b> on Home, or uploads a photo. The AI draft fills the cart, marked as coming from the prescription.</li>
+<li>The order enters the shared queue, oldest first, with wait time coloured against the 10-minute target.</li>
+<li>The pharmacist compares photo and draft side by side, then decides per item in one atomic request: approve the exact product, quantity and prescription; remove with a reason; offer a generic. A refill pre-fills the dose confirmed on the last fill, and it still has to be approved.</li>
+<li>No changes: the order is routed at once. Changes or a generic: the customer confirms first, and consent is recorded.</li>
+</ol>
+<h3>Routing and stock</h3>
+<p>Stores within 8 km with a fresh stock count are tried nearest first. Each store gets one short transaction that locks its stock rows in product order, checks every item and reserves all or nothing. A 20-order race test for the last strip gives it to exactly one order, and one store per transaction means two orders can't deadlock. If no store can fill the order it waits, and it's retried after every stock import. The CSV shows a preview; any bad row blocks the whole file and nothing changes.</p>
+<h3>Refills and reminders</h3>
+<p>On delivery the system works out units = packs × pack size, days = units ÷ daily dose, and adds them to any supply left. The daily job at 09:00 IST sends reminders 5, 2 and 0 days before run-out. It holds back if an order for that medicine is already in progress. Running it twice sends nothing new. If the prescription has expired, the message asks for a new upload instead of a reorder. Messages say "may run out around" a date and never give dosing advice.</p>
+
+<h2>6. The hard part: blocking medicines without approval</h2>
+<div class="key">The UI and API check these rules for a good experience, but the database has the final say. Two triggers and several CHECK constraints hold even if application code is wrong. 21 tests attack them directly with raw SQL.</div>
+<table>
+<tr><th style="width:40%">Rule</th><th>Enforced by</th></tr>
+<tr><td>Schedule X and NDPS can't enter any order</td><td>Trigger on <code>order_items</code>, independent of configuration; search shows them disabled for customers and pharmacists</td></tr>
+<tr><td>No order reaches picking or later unless every active item is approved by an active registered pharmacist</td><td>Dispatch gate trigger on <code>orders</code>, on INSERT too, so nothing can be created already "packed"</td></tr>
+<tr><td>What ships must equal what was approved</td><td>The gate compares current product, quantity and prescription with the approved values, so an edit after approval can't slip through</td></tr>
+<tr><td>A generic ships only with pharmacist approval and customer consent</td><td>Gate requires <code>customer_choice = SWITCH</code> and <code>consent_at</code></td></tr>
+<tr><td>Prescription verified where one is needed; H1 register row at handover</td><td>Gate reads <code>schedule_rules</code>; the register row is written in the handover transaction</td></tr>
+</table>
+<p>The dashboard's "H/H1 items dispatched without approval" is counted from the data on each load, not assumed. If the gate ever failed, that number would show it.</p>
+
+<h2>7. How the AI works</h2>
+<p><b>Pipeline.</b> Check the real file type from its bytes → fix rotation, strip metadata including GPS, resize → encrypt and store → respond at once → read in the background with Gemini (structured JSON, validated with Zod) → match to the catalog → save a draft with status READY, UNSURE, UNREADABLE or FAILED.</p>
+<p><b>The AI only transcribes; our code decides.</b> Matching is deterministic: name similarity plus exact strength. Products and generics come from our catalog. The AI has no tools and can't approve, dispatch or invent a product, and text in an image is treated as data.</p>
+<table>
+<tr><th style="width:39%">When it goes wrong</th><th>What happens</th></tr>
+<tr><td>Fields uncertain, or no catalog match on a clear photo</td><td>UNSURE: "AI unsure" or "Not found on prescription" tags for the pharmacist. No percentages, because model confidence isn't a calibrated probability.</td></tr>
+<tr><td>Name the AI doubts (low confidence)</td><td>Never selects a product; the pharmacist sees candidates.</td></tr>
+<tr><td>Different strength written than we stock</td><td>Never auto-selected. A bare number ("Glimora 2") must equal the product's strength.</td></tr>
+<tr><td>Blurred photo, or not a prescription</td><td>UNREADABLE: the customer is asked for a new photo or can send it anyway. The pharmacist can request a re-upload.</td></tr>
+<tr><td>Overload, daily limit, timeout, invalid JSON</td><td>Tries up to three models in order, then FAILED. The customer can still order, and the pharmacist enters items by hand or presses Retry AI.</td></tr>
+<tr><td>Server restarts mid-read</td><td>A read still "reading" after 2 minutes is marked failed the next time it's looked at.</td></tr>
+</table>
+<h3>Measured results</h3>
+<p><code>npm run ai:eval</code> scores labelled synthetic prescriptions and saves the numbers to <code>docs/ai-eval-results.json</code>. It counts a wrong product separately from accuracy, because a wrong product is the dangerous failure.</p>
+<table>
+<tr><th>Samples read</th><th>Medicines and strengths correct</th><th>Doses correct</th><th>Wrong product selected</th><th>Blurred / not a prescription</th><th>Median read</th></tr>
+<tr><td>16 of 16</td><td>24 of 24 lines</td><td>24 of 24 lines</td><td>0</td><td>Both UNREADABLE</td><td>12.3 s</td></tr>
+</table>
+<div class="note"><b>What this does not prove.</b> The samples are synthetic: 6 typed and 8 in a handwriting font, generated by a script, plus the two bad photos. It isn't evidence of accuracy on real doctors' handwriting, which needs real, consented data. Two samples needed a second run because of timeouts, and 7 of the 16 reads came from a fallback model. After this run a third model was added; it was checked on only 4 samples, and it read the blurred photo's medicine as UNSURE rather than rejecting the photo.</div>
+<h3>What real testing found that mocks couldn't</h3>
+<ul>
+<li>Gemini refused our output schema as too complex, so every read would have silently become manual entry. Fixed; limits stay in Zod.</li>
+<li>Handwritten "Glimora 2" came back with no unit and <b>Glimora 1</b> was selected, the exact thing the design forbids. The eval's wrong-product count caught it. Fixed, with tests.</li>
+<li>On a blurred photo the model invented "Tab Pyrexia 80 mg" and a doctor. Nothing reached the cart only because the name matched no product, which is the case for matching in our own code. The prompt now forbids guessing, and a poor read with no match asks for a new photo.</li>
+<li>Free-tier limits: Google reported 20 requests a day on the primary model, and overload comes and goes. Hence three models, and hence seeded drafts that need no AI call.</li>
+</ul>
+
+<h2 class="new-page">8. UI and design decisions</h2>
+<p>The brief says customers are often worried or ordering for a parent, and that design counts as much as features. So the direction is a trusted pharmacy slip: warm paper, dark ink, one deep green, hairlines instead of boxes. Red appears only when something is blocked or failed. There's one raised card per person, and no promotions.</p>
+<div class="shots">
+<figure><img src="screens/c2-home.jpg" alt="Customer home"><figcaption><b>Home.</b> The next action is the biggest thing on screen. A supply line shows days left, and a reorder already in progress replaces the button so nobody orders twice.</figcaption></figure>
+<figure><img src="screens/c3-ai-draft.jpg" alt="Cart from AI draft"><figcaption><b>Cart from the AI draft.</b> Lines say "From your prescription". The customer never sees confidence scores, and the pharmacist checks everything anyway.</figcaption></figure>
+<figure><img src="screens/c4-generic.jpg" alt="Generic choice"><figcaption><b>Confirm changes.</b> A cheaper generic needs an explicit choice, with both prices. The button stays off until the customer chooses; that choice is the recorded consent.</figcaption></figure>
+</div>
+<div class="shots">
+<figure><img src="screens/c3-blurry.jpg" alt="Blurred photo"><figcaption><b>When the AI can't read.</b> A calm next step, not an error. The customer can retake the photo or simply continue.</figcaption></figure>
+<figure><img src="screens/c2-bengali.jpg" alt="Bengali home"><figcaption><b>Bengali.</b> The account's language follows the customer to a new phone. Latin digits are kept for medicine numbers and prices (design decision).</figcaption></figure>
+<figure><img src="screens/c1-signin.jpg" alt="Sign in"><figcaption><b>Sign-in.</b> One field, then a six-digit code. In test mode, Try the demo lists everyone; this panel doesn't exist in production.</figcaption></figure>
+</div>
+<div class="wide"><figure><img src="screens/p2-workspace.jpg" alt="Verification workspace"><figcaption><b>Verification workspace.</b> The prescription stays beside the items while the right pane scrolls, because the brief asks for side-by-side comparison. Only exceptions are marked ("AI unsure"). The bottom bar says exactly what's still needed before Approve turns on. Keyboard: A, R, U.</figcaption></figure></div>
+<div class="wide"><figure><img src="screens/p1-queue.jpg" alt="Verification queue"><figcaption><b>Queue.</b> Sorted oldest first, with the wait coloured neutral, amber or red against the 10-minute target. Filters match how pharmacists work: new, refills, re-uploaded, AI unsure.</figcaption></figure></div>
+<div class="wide"><figure><img src="screens/s1-store.jpg" alt="Store orders"><figcaption><b>Store orders.</b> Tabs follow the physical steps, and each card offers only the next one. It shows who approved the order. The prescription image isn't here: pickers don't need health data.</figcaption></figure></div>
+<div class="wide"><figure><img src="screens/o1-overview.jpg" alt="Operations overview"><figcaption><b>Central operations.</b> Plain tables, no decorative charts. The safety line comes first because it's the promise the client cares about most. All orders has no patient names, because operations doesn't need them.</figcaption></figure></div>
+<p><b>Responsive.</b> Customer screens are one 560 px column from 360 px up. Staff screens are desktop-first, and tables scroll inside their panel on phones. Automated tests assert no sideways scroll at 360 px. Loading uses skeletons, and after 4 seconds a note explains a server cold start. Errors offer a retry, empty states offer the next action, and buttons use minimum heights because Bengali labels run longer.</p>
+
+<h2>9. Security and compliance</h2>
+<table>
+<tr><th style="width:21%">Area</th><th>What's in place</th></tr>
+<tr><td>Sign-in</td><td>OTP stored as a keyed hash; 5-minute expiry, 5 attempts, 3 codes per phone in 15 minutes. Staff passwords use Argon2. New session id at sign-in; cookie is HttpOnly, Secure, SameSite=Lax.</td></tr>
+<tr><td>Access control</td><td>Role checks on every route group. Customer queries are scoped to the account, and someone else's record returns 404, not 403. Pharmacists fulfil only their own store. Operations can't approve or view prescription images.</td></tr>
+<tr><td>Inputs</td><td>Zod validation on all input; file type read from bytes; 10 MB limit; raw SQL only through parameterised templates, enforced by a lint rule; Origin check against cross-site requests.</td></tr>
+<tr><td>Health data (DPDP)</td><td>AES-256-GCM with the record id bound in, so an encrypted file can't be moved to another record. Images served only to the owner or a pharmacist, with no-store. Every view is logged. Consent taken at onboarding. Request logs hold only id, method, URL and status.</td></tr>
+<tr><td>Secrets</td><td>Only variable names are in the repository; the app refuses to start without required values. Git history was scanned for each secret value.</td></tr>
+<tr><td>Test-mode features</td><td>Shown OTP, one-tap sign-in, Reset demo and nightly refresh don't exist with <code>APP_ENV=production</code>. Tests prove the routes return 404 and nothing is wiped.</td></tr>
+</table>
+<p class="muted">This is a prototype, not a certified compliance system. The rules need review by the client's legal and compliance team. On Gemini's free tier Google may use inputs to improve its products, so only synthetic images are used and the upload screen warns against real documents; production needs a paid tier with a data agreement.</p>
+
+<h2>10. Testing</h2>
+<table>
+<tr><th style="width:27%">Level</th><th>What it covers</th></tr>
+<tr><td>161 unit and integration tests (Vitest, real Postgres)</td><td>Dispatch gate and X/NDPS triggers attacked with raw SQL; roles and ownership; OTP; routing race for the last strip; reminder maths and no-duplicates; CSV validation; order flow; AI failure handling; matcher; demo features absent in production.</td></tr>
+<tr><td>6 browser journeys (Playwright)</td><td>Upload at 360 px, then pharmacist, customer confirmation and store through delivery; reminder and one-tap reorder; language; one-tap demo; stock file. They run on their own database with the AI off, so the manual path is always exercised.</td></tr>
+<tr><td>CI (GitHub Actions)</td><td>Lint, typecheck, tests and build, plus the browser journeys, on every push.</td></tr>
+<tr><td>Live checks</td><td>The full journey on the deployed site, including the real AI read, 9.9 MB and 4.3 MB uploads through the Vercel rewrite, the secure cookie and Reset demo. The production bundle was also tested surviving the database dropping all connections, as Neon does when it scales to zero.</td></tr>
+</table>
+<p class="muted">The retake and Retry AI fixes were checked against the real AI by script; they aren't in CI, because CI runs with the AI off.</p>
+
+<h2>11. What was cut, the limits, and what's next</h2>
+<table>
+<tr><th style="width:44%">Cut or limited today</th><th>Why</th></tr>
+<tr><td>Real SMS, WhatsApp and UPI</td><td>Mocks are allowed by the brief; these need provider accounts</td></tr>
+<tr><td>Real road distance; 6 stores, not 46</td><td>Paid maps; the brief gives no store list</td></tr>
+<tr><td>Splitting an order across stores; central warehouse stock</td><td>One store fills the whole order, or it waits. Simpler and safer for this slice</td></tr>
+<tr><td>Editing screen for rules; screen to read access logs</td><td>Rules are read-only data, and logs are written but viewed only in the database</td></tr>
+<tr><td>Hindi/Bengali staff screens; native review of translations</td><td>Time. Customer screens came first (A10)</td></tr>
+<tr><td>Content-Security-Policy on the frontend; formal accessibility audit</td><td>Not done. Security headers are on the API only; contrast and keyboard use were designed in but not audited</td></tr>
+<tr><td>Free-tier hosting</td><td>About 20 AI reads a day per model; sign-in rate limit is shared because all traffic arrives through Vercel; the demo stays awake only through an external uptime monitor</td></tr>
+</table>
+<h3>If this became the real project, in order</h3>
+<ol>
+<li><b>Measure the AI on real prescriptions</b>, with consent and a paid data-protected tier. This is the largest unknown, and it decides how much time pharmacists actually save.</li>
+<li><b>Legal review</b> of the rules, validity period and data location, then a rules editor with an audit trail and an access-log screen.</li>
+<li><b>Real providers:</b> SMS OTP, WhatsApp reminders, a UPI gateway with refunds, and object storage for images.</li>
+<li><b>Real data:</b> import the 46 stores and full catalog, connect the actual daily stock export, add road distance.</li>
+<li><b>Pilot</b> with a few stores, tracking the brief's targets: adoption, drop-off, median verification.</li>
+</ol>
+
+<h2>12. How AI tools were used</h2>
+<p>I built this with an AI coding assistant (Claude Code), which wrote most of the code, tests and the first draft of this document under my direction. I chose the problem, the stack and the free-tier constraint, reviewed and corrected the plan, and tested the main flows by hand on a local build. The checks on the live site were scripted. The decision log (<code>docs/DECISIONS.md</code>) and commit history show how choices were made and changed, including where testing proved an earlier choice wrong. Gemini is a separate thing: it's the product's prescription reader.</p>
+
+</body>
+</html>

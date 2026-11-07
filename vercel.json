@@ -5,7 +5,7 @@
   "buildCommand": "npm run build -w frontend",
   "outputDirectory": "frontend/dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://nirantar-api.onrender.com/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://nirantar-api-b159.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

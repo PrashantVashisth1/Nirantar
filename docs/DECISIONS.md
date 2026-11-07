@@ -131,4 +131,6 @@ Trigger 1 refuses any Schedule X / NDPS order item. Trigger 2 (the dispatch gate
 
 **E2E has its own database and ports.** It used to reseed the demo data and needed the dev servers stopped. Now it can run while someone is testing the app.
 
+**The public demo refreshes itself every night (this reverses a plan cut).** The plan dropped the nightly reset to save infrastructure, but dates are relative to the seed and a stock count over 48 hours old stops a store being used for routing. A reviewer opening the demo three days later would have seen every order stuck waiting for stock. A small scheduled workflow calls a secret-protected endpoint that doesn't exist in production. It also loads the data after the first deploy, with no secrets on a developer's machine.
+
 **Removed files that `prisma init` added for AI coding assistants** (`.agents`, `.claude`, `.windsurf`, `skills-lock.json`). Not part of the product.

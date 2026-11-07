@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { ORDER_STATUSES, dateOnly, todayIst } from '@nirantar/shared';
-import { seedDemoWorld } from '../../../prisma/seed/world';
 import { isDemoMode } from '../../config/env';
 import { prisma } from '../../lib/db';
-import { AppError, notFound } from '../../lib/errors';
+import { AppError } from '../../lib/errors';
 import {
   applyStockImport,
   discardStockImport,
   previewStockImport,
   toImportDto,
 } from '../../services/inventory/stock-import.service';
+import { resetDemo } from '../../services/ops/demo.service';
 import { getH1Register, getOverview, getRules } from '../../services/ops/overview.service';
 import { recentReminders, runReminders } from '../../services/refills/reminder.service';
 import { routeOrder } from '../../services/routing/routing.service';
@@ -145,16 +145,8 @@ opsRouter.get('/orders', async (req, res) => {
 });
 
 // ── Reset demo: test mode only; in production this route doesn't exist ──
-let resetting = false;
 opsRouter.post('/demo/reset', async (_req, res) => {
-  if (!isDemoMode()) throw notFound('Not found.');
-  if (resetting) throw new AppError(409, 'RESET_IN_PROGRESS', 'The demo is already being reset.');
-  resetting = true;
-  try {
-    res.json(await seedDemoWorld());
-  } finally {
-    resetting = false;
-  }
+  res.json(await resetDemo());
 });
 
 // ── Reminders ──

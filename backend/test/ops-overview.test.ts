@@ -97,6 +97,35 @@ describe('GET /ops/orders', () => {
   });
 });
 
+describe('POST /internal/demo/reset (the nightly refresh)', () => {
+  const originalSecret = env.CRON_SECRET;
+  const originalEnv = env.APP_ENV;
+  afterEach(() => {
+    env.CRON_SECRET = originalSecret;
+    env.APP_ENV = originalEnv;
+  });
+
+  it('is switched off without a configured secret', async () => {
+    env.CRON_SECRET = undefined;
+    await request(server).post('/api/internal/demo/reset').expect(404);
+  });
+
+  it('refuses a wrong secret and wipes nothing', async () => {
+    await createStaff('OPS');
+    env.CRON_SECRET = 'x'.repeat(40);
+    await request(server).post('/api/internal/demo/reset').set('X-Cron-Secret', 'y'.repeat(40)).expect(401);
+    expect(await prisma.user.count()).toBe(1);
+  });
+
+  it('does not exist in production, even with the right secret', async () => {
+    await createStaff('OPS');
+    env.CRON_SECRET = 'x'.repeat(40);
+    env.APP_ENV = 'production';
+    await request(server).post('/api/internal/demo/reset').set('X-Cron-Secret', 'x'.repeat(40)).expect(404);
+    expect(await prisma.user.count()).toBe(1);
+  });
+});
+
 describe('POST /ops/demo/reset', () => {
   const original = env.APP_ENV;
   afterEach(() => {
